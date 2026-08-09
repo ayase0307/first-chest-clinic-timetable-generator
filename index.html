@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#073f58">
+  <title>門診時刻表產生器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M7 16h18M16 7v18"/></svg>
+        </span>
+        <div>
+          <p class="eyebrow">FIRST CHEST CLINIC</p>
+          <h1>門診時刻表產生器</h1>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="save-state" class="save-state" aria-live="polite">已自動儲存</span>
+        <button class="button button-ghost" id="download-json" type="button">備份資料</button>
+        <button class="button button-ghost" id="import-json" type="button">匯入資料</button>
+        <button class="button button-danger-ghost" id="reset-data" type="button">還原範例</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="editor-panel" aria-label="門診資料編輯區">
+        <section class="editor-intro">
+          <span class="step-number">01</span>
+          <div>
+            <h2>更新當月資料</h2>
+            <p>所有欄位即時套入右側版面，設計與尺寸已鎖定。</p>
+          </div>
+        </section>
+
+        <details class="editor-section" open>
+          <summary>基本資料</summary>
+          <div class="section-body form-grid" id="basic-fields"></div>
+        </details>
+
+        <details class="editor-section" open>
+          <summary>本月異動</summary>
+          <div class="section-body change-list-editor" id="alert-fields"></div>
+        </details>
+
+        <details class="editor-section" open>
+          <summary>門診表</summary>
+          <div class="section-body schedule-editor" id="schedule-fields"></div>
+        </details>
+
+        <details class="editor-section">
+          <summary>掛號與聯絡資訊</summary>
+          <div class="section-body form-grid" id="service-fields"></div>
+        </details>
+      </aside>
+
+      <section class="preview-stage" aria-label="門診時刻表預覽">
+        <div class="preview-toolbar">
+          <div>
+            <span class="step-number step-number-dark">02</span>
+            <div>
+              <h2>即時預覽</h2>
+              <p>母版 3300×2400・比例 11:8</p>
+            </div>
+          </div>
+          <div class="export-actions">
+            <button class="button button-secondary" id="export-small" type="button">下載 825×600</button>
+            <button class="button button-primary" id="export-large" type="button">下載 3300×2400</button>
+          </div>
+        </div>
+
+        <div class="poster-workbench">
+          <div class="poster-frame">
+            <svg id="poster" viewBox="0 0 3300 2400" role="img" aria-label="門診時刻表預覽"></svg>
+          </div>
+          <p class="preview-note"><span></span> 匯出內容只包含海報，不包含編輯介面。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <input id="json-file" type="file" accept="application/json,.json" hidden>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="ornament-data.js"></script>
+  <script src="qr-data.js"></script>
+  <script src="date-logic.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "first-chest-clinic-timetable-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "第一胸腔病防治所門診時刻表產生器",
+  "scripts": {
+    "test": "node tests/date-logic.test.js"
+  }
+}
