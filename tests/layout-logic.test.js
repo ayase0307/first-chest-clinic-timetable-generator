@@ -8,7 +8,7 @@ assert.deepEqual(
     const layout = getChangeLayout(count);
     return [layout.rows, layout.columns, layout.stacked];
   }),
-  [[1, 1, false], [1, 2, false], [1, 3, false]]
+  [[1, 3, false], [1, 3, false], [1, 3, false]]
 );
 
 assert.deepEqual(
@@ -20,9 +20,9 @@ assert.deepEqual(
 );
 
 const fourChanges = getChangeLayout(4);
-assert.equal(fourChanges.alertHeight, 350);
-assert.equal(fourChanges.gridY, 816);
-assert.equal(fourChanges.gridY + fourChanges.tableHeaderHeight + fourChanges.tableRowHeight * 4, 1844);
+assert.equal(fourChanges.alertHeight, 390);
+assert.equal(fourChanges.gridY, 850);
+assert.equal(fourChanges.gridY + fourChanges.tableHeaderHeight + fourChanges.tableRowHeight * 4, 1850);
 
 assert.equal(getChangeLayout(99).count, 6);
 

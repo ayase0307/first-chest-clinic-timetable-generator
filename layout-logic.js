@@ -9,17 +9,17 @@
     const count = Math.max(0, Math.min(6, Number.parseInt(changeCount, 10) || 0));
     const stacked = count > 3;
     const rows = stacked ? 2 : 1;
-    const columns = count === 4 ? 2 : Math.max(1, Math.min(count, 3));
+    const columns = count === 4 ? 2 : count > 0 ? 3 : 1;
 
     return {
       count,
       stacked,
       rows,
       columns,
-      alertHeight: stacked ? 350 : 210,
-      gridY: stacked ? 816 : 680,
-      tableHeaderHeight: stacked ? 124 : 140,
-      tableRowHeight: stacked ? 226 : 250
+      alertHeight: stacked ? 390 : 250,
+      gridY: stacked ? 850 : 710,
+      tableHeaderHeight: stacked ? 120 : 140,
+      tableRowHeight: stacked ? 220 : 250
     };
   }
 

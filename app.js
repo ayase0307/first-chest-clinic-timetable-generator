@@ -504,38 +504,42 @@
       stroke: "#efd5c9", "stroke-width": 3
     });
     addRect(alert, 150, alertY, 3000, 10, "#d36b4b", 5);
-    const labelCenterY = alertY + alertHeight / 2;
-    const labelY = labelCenterY - 62;
-    addRect(alert, 174, labelY, 270, 124, "rgba(255,255,255,.96)", 26, {
-      stroke: "#e8d1c6", "stroke-width": 3
-    });
-    addRect(alert, 193, labelY + 21, 82, 82, "#f6dfd4", 22);
+    addRect(alert, 182, alertY + 24, 62, 62, "#f3d8cc", 18);
     if (window.ORNAMENT_ASSETS?.announcement) {
       alert.appendChild(svgEl("image", {
         href: window.ORNAMENT_ASSETS.announcement,
-        x: 201, y: labelY + 29, width: 66, height: 66,
+        x: 190, y: alertY + 32, width: 46, height: 46,
         preserveAspectRatio: "xMidYMid meet"
       }));
     }
-    addText(alert, "門診異動", 294, labelCenterY - 8, {
-      size: 35, weight: 900, fill: "#873f2c", spacing: 2
+    addText(alert, "門診異動", 270, alertY + 71, {
+      size: 48, weight: 900, fill: "#873f2c", spacing: 4
     });
-    addText(alert, activeChanges.length ? `本月共 ${activeChanges.length} 筆` : "本月 0 筆", 294, labelCenterY + 35, {
-      size: 24, weight: 760, fill: "#9b7062", spacing: 1
+    addRect(alert, 554, alertY + 29, 178, 52, "#f2d8cc", 26);
+    addText(alert, activeChanges.length ? `共 ${activeChanges.length} 筆` : "本月 0 筆", 643, alertY + 66, {
+      size: 27, weight: 850, anchor: "middle", fill: "#984a34", spacing: 2
     });
+    addText(alert, activeChanges.length ? "其餘門診依固定時刻表正常看診" : "本月門診依固定時刻表正常看診", 3090, alertY + 68, {
+      size: 31, weight: 720, anchor: "end", fill: "#79665e", spacing: 1
+    });
+    addRect(alert, 180, alertY + 99, 2940, 3, "#ead7ce", 1.5);
 
     if (!activeChanges.length) {
-      addText(alert, "本月無門診異動", 490, alertY + 88, { size: 54, weight: 900, fill: "#8e3f29", spacing: 2 });
-      addText(alert, "請依下方固定門診表正常看診", 490, alertY + 157, { size: 39, weight: 720, fill: "#68554d" });
+      addText(alert, "本月無門診異動", 1650, alertY + 170, {
+        size: 54, weight: 900, anchor: "middle", fill: "#8e3f29", spacing: 3
+      });
+      addText(alert, "請依下方固定門診表正常看診", 1650, alertY + 222, {
+        size: 34, weight: 720, anchor: "middle", fill: "#75635b"
+      });
     } else {
       const rows = changeLayout.rows;
       const columns = changeLayout.columns;
-      const areaX = 450;
-      const areaWidth = 2670;
+      const areaX = 180;
+      const areaWidth = 2940;
       const gapX = 20;
       const gapY = 18;
-      const areaY = alertY + 24;
-      const areaHeight = alertHeight - 48;
+      const areaY = alertY + 119;
+      const areaHeight = alertHeight - 143;
       const cardWidth = (areaWidth - gapX * (columns - 1)) / columns;
       const cardHeight = (areaHeight - gapY * (rows - 1)) / rows;
       activeChanges.forEach((change, index) => {
@@ -546,17 +550,17 @@
         const x = areaX + rowOffset + column * (cardWidth + gapX);
         const y = areaY + row * (cardHeight + gapY);
         const accent = change.kind === "closed" ? "#a43e31" : change.kind === "notice" ? "#b87928" : "#cf6847";
-        addRect(alert, x, y, cardWidth, cardHeight, "rgba(255,255,255,.96)", 22, {
+        addRect(alert, x, y, cardWidth, cardHeight, "rgba(255,255,255,.97)", 20, {
           stroke: "#ead8cf", "stroke-width": 3
         });
-        addRect(alert, x, y, cardWidth, 8, accent, 4);
-        addRect(alert, x + 20, y + 22, 190, 48, accent, 24);
-        addText(alert, formatChangeDate(change.date), x + 115, y + 57, {
-          size: 29, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
+        addRect(alert, x, y, 8, cardHeight, accent, 4);
+        addRect(alert, x + 24, y + 17, 190, 43, accent, 21.5);
+        addText(alert, formatChangeDate(change.date), x + 119, y + 48, {
+          size: 27, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
         });
         const sessionRoom = `${change.session || "時段"}・${change.room || "診室"}`;
-        addText(alert, sessionRoom, x + cardWidth - 24, y + 58, {
-          size: fitTextSize(sessionRoom, 29, cardWidth - 250, 23), weight: 780, anchor: "end", fill: "#79655c"
+        addText(alert, sessionRoom, x + cardWidth - 24, y + 49, {
+          size: fitTextSize(sessionRoom, 28, cardWidth - 255, 22), weight: 780, anchor: "end", fill: "#79655c"
         });
 
         let detail;
@@ -567,8 +571,8 @@
         } else {
           detail = `${change.originalDoctor || "原醫師"} → ${change.substituteDoctor || "代診醫師"}代診`;
         }
-        addText(alert, detail, x + 24, y + cardHeight - 25, {
-          size: fitTextSize(detail, 40, cardWidth - 48, 27), weight: 850, fill: "#403a37"
+        addText(alert, detail, x + 26, y + cardHeight - 18, {
+          size: fitTextSize(detail, 37, cardWidth - 52, 25), weight: 850, fill: "#403a37"
         });
       });
     }
