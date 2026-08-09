@@ -344,6 +344,14 @@
     return node;
   }
 
+  function fitTextSize(text, preferredSize, maxWidth, minimumSize = 24) {
+    const units = Array.from(String(text || "")).reduce((total, character) => {
+      return total + (/^[\x00-\x7F]$/.test(character) ? 0.58 : 1);
+    }, 0);
+    if (!units) return preferredSize;
+    return Math.max(minimumSize, Math.min(preferredSize, Math.floor((maxWidth / units) * .94)));
+  }
+
   function addRect(parent, x, y, width, height, fill, radius = 0, extra = {}) {
     const node = svgEl("rect", { x, y, width, height, rx: radius, fill, ...extra });
     parent.appendChild(node);
@@ -413,12 +421,17 @@
     shadow.append(
       svgEl("feDropShadow", { dx: 0, dy: 18, stdDeviation: 24, "flood-color": "#063f58", "flood-opacity": .14 })
     );
-    const headerGradient = svgEl("linearGradient", { id: "headerGradient", x1: 0, y1: 0, x2: 1, y2: 1 });
+    const headerGradient = svgEl("linearGradient", { id: "headerGradient", x1: 0, y1: 0, x2: 1, y2: 0 });
     headerGradient.append(
       svgEl("stop", { offset: "0%", "stop-color": "#073f58" }),
-      svgEl("stop", { offset: "100%", "stop-color": "#0a5a75" })
+      svgEl("stop", { offset: "100%", "stop-color": "#0b6078" })
     );
-    defs.append(shadow, headerGradient);
+    const alertGradient = svgEl("linearGradient", { id: "alertGradient", x1: 0, y1: 0, x2: 1, y2: 0 });
+    alertGradient.append(
+      svgEl("stop", { offset: "0%", "stop-color": "#fff8f4" }),
+      svgEl("stop", { offset: "100%", "stop-color": "#f8ebe5" })
+    );
+    defs.append(shadow, headerGradient, alertGradient);
     poster.appendChild(defs);
 
     addRect(poster, 0, 0, 3300, 2400, "#e7f0f2");
@@ -426,73 +439,105 @@
     addRect(poster, 82, 82, 24, 2236, "#0a5871", 12);
 
     const header = svgEl("g");
-    addRect(header, 150, 118, 820, 72, "#073f58", 36);
-    addText(header, state.clinic, 190, 168, { size: 38, weight: 800, fill: "#ffffff", spacing: 2 });
-    addText(header, "門診時刻表", 150, 345, { size: 124, weight: 900, fill: "#073f58", spacing: 8 });
-    addText(header, state.operator, 1055, 304, { size: 38, weight: 700, fill: "#54727d", spacing: 2 });
-    addText(header, `更新 ${state.updateDate}`, 1055, 360, { size: 30, weight: 650, fill: "#8a9ca2" });
+    addRect(header, 150, 110, 3000, 280, "url(#headerGradient)", 44, { filter: "url(#cardShadow)" });
+    addRect(header, 150, 110, 22, 280, "#e47b57", 11);
+    addText(header, state.clinic, 220, 177, {
+      size: fitTextSize(state.clinic, 35, 1480, 28), weight: 780, fill: "#c8e2e7", spacing: 2
+    });
+    addRect(header, 220, 202, 430, 6, "#e47b57", 3);
+    addText(header, "門診時刻表", 215, 336, { size: 118, weight: 900, fill: "#ffffff", spacing: 8 });
 
-    addRect(header, 2295, 126, 330, 256, "#edf5f6", 40);
-    addRect(header, 2321, 151, 278, 206, "#dcecef", 34);
+    addRect(header, 1848, 145, 4, 210, "rgba(255,255,255,.2)", 2);
+    addText(header, "委託經營", 1910, 178, { size: 25, weight: 800, fill: "#91c2cc", spacing: 4 });
+    addText(header, state.operator, 1910, 226, {
+      size: fitTextSize(state.operator, 36, 610, 28), weight: 760, fill: "#ffffff", spacing: 1
+    });
+    addText(header, "資料更新", 1910, 288, { size: 25, weight: 800, fill: "#91c2cc", spacing: 4 });
+    addText(header, state.updateDate, 1910, 337, {
+      size: fitTextSize(state.updateDate, 35, 430, 27), weight: 760, fill: "#ffffff"
+    });
+
+    addRect(header, 2482, 153, 180, 180, "rgba(255,255,255,.09)", 90);
     if (window.ORNAMENT_ASSETS?.calendar) {
       header.appendChild(svgEl("image", {
         href: window.ORNAMENT_ASSETS.calendar,
-        x: 2317, y: 118, width: 286, height: 286,
+        x: 2497, y: 166, width: 150, height: 150,
         preserveAspectRatio: "xMidYMid meet"
       }));
     }
-    addRect(header, 2740, 112, 410, 270, "url(#headerGradient)", 40);
-    addText(header, `民國 ${state.year} 年`, 2945, 177, { size: 35, weight: 750, anchor: "middle", fill: "#b8dfe5", spacing: 3 });
-    addText(header, String(state.month).padStart(2, "0"), 2918, 327, { size: 160, weight: 900, anchor: "middle", fill: "#ffffff", spacing: -4 });
-    addText(header, "月", 3060, 320, { size: 56, weight: 850, fill: "#f3b394" });
+    addRect(header, 2700, 132, 415, 236, "#fff8ef", 34);
+    addRect(header, 2700, 132, 415, 12, "#e47b57", 6);
+    addText(header, `民國 ${state.year} 年`, 2907, 185, {
+      size: 31, weight: 800, anchor: "middle", fill: "#55727a", spacing: 3
+    });
+    addText(header, String(state.month).padStart(2, "0"), 2878, 326, {
+      size: 142, weight: 900, anchor: "middle", fill: "#073f58", spacing: -3
+    });
+    addText(header, "月", 3032, 316, { size: 52, weight: 900, fill: "#c65f3e" });
     poster.appendChild(header);
 
     const activeChanges = (state.changes || []).filter((change) =>
       change.date || change.session || change.room || change.originalDoctor || change.substituteDoctor
     ).slice(0, 6);
-    const denseChanges = activeChanges.length > 4;
-    const alertHeight = denseChanges ? 300 : 190;
+    const changeLayout = window.TimetableLayoutLogic.getChangeLayout(activeChanges.length);
+    const stackedChanges = changeLayout.stacked;
+    const alertY = 430;
+    const alertHeight = changeLayout.alertHeight;
     const alert = svgEl("g");
-    addRect(alert, 150, 450, 3000, alertHeight, "#fae8df", 34);
-    addRect(alert, 174, 474, 230, alertHeight - 48, "#f3d9cd", 28);
-    const labelCenterY = 474 + (alertHeight - 48) / 2;
+    addRect(alert, 150, alertY, 3000, alertHeight, "url(#alertGradient)", 36, {
+      stroke: "#efd5c9", "stroke-width": 3
+    });
+    addRect(alert, 150, alertY, 270, alertHeight, "#a84b34", 36);
+    addRect(alert, 386, alertY, 34, alertHeight, "#a84b34");
+    const labelCenterY = alertY + alertHeight / 2;
     if (window.ORNAMENT_ASSETS?.announcement) {
       alert.appendChild(svgEl("image", {
         href: window.ORNAMENT_ASSETS.announcement,
-        x: 185, y: labelCenterY - 58, width: 116, height: 116,
+        x: 178, y: labelCenterY - 89, width: 92, height: 92,
         preserveAspectRatio: "xMidYMid meet"
       }));
     }
-    addText(alert, "本月", 349, labelCenterY - 16, { size: 29, weight: 800, anchor: "middle", fill: "#9a432c", spacing: 3 });
-    addText(alert, "異動", 349, labelCenterY + 32, { size: 38, weight: 900, anchor: "middle", fill: "#873923", spacing: 4 });
+    addText(alert, "門診", 332, labelCenterY - 23, { size: 29, weight: 800, anchor: "middle", fill: "#f7d6c8", spacing: 3 });
+    addText(alert, "異動", 332, labelCenterY + 30, { size: 43, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 4 });
+    if (activeChanges.length) {
+      addText(alert, `共 ${activeChanges.length} 筆`, 332, labelCenterY + 76, {
+        size: 25, weight: 760, anchor: "middle", fill: "#f7d6c8", spacing: 2
+      });
+    }
 
     if (!activeChanges.length) {
-      addText(alert, "本月無異動", 470, 527, { size: 56, weight: 900, fill: "#8e3f29", spacing: 2 });
-      addText(alert, "依每週固定門診表正常看診", 470, 592, { size: 42, weight: 720, fill: "#5a463f" });
+      addText(alert, "本月無門診異動", 490, alertY + 88, { size: 54, weight: 900, fill: "#8e3f29", spacing: 2 });
+      addText(alert, "請依下方固定門診表正常看診", 490, alertY + 157, { size: 39, weight: 720, fill: "#68554d" });
     } else {
-      const rows = denseChanges ? 2 : 1;
-      const columns = denseChanges ? Math.ceil(activeChanges.length / 2) : activeChanges.length;
-      const areaX = 430;
-      const areaWidth = 2696;
-      const gap = 18;
-      const areaY = 474;
+      const rows = changeLayout.rows;
+      const columns = changeLayout.columns;
+      const areaX = 450;
+      const areaWidth = 2670;
+      const gapX = 20;
+      const gapY = 18;
+      const areaY = alertY + 24;
       const areaHeight = alertHeight - 48;
-      const cardWidth = (areaWidth - gap * (columns - 1)) / columns;
-      const cardHeight = (areaHeight - gap * (rows - 1)) / rows;
+      const cardWidth = (areaWidth - gapX * (columns - 1)) / columns;
+      const cardHeight = (areaHeight - gapY * (rows - 1)) / rows;
       activeChanges.forEach((change, index) => {
-        const row = denseChanges ? Math.floor(index / columns) : 0;
-        const column = denseChanges ? index % columns : index;
+        const row = Math.floor(index / columns);
+        const column = index % columns;
         const itemsInRow = Math.min(columns, activeChanges.length - row * columns);
-        const rowOffset = (columns - itemsInRow) * (cardWidth + gap) / 2;
-        const x = areaX + rowOffset + column * (cardWidth + gap);
-        const y = areaY + row * (cardHeight + gap);
-        addRect(alert, x, y, cardWidth, cardHeight, "rgba(255,255,255,.9)", 24, { stroke: "#edcbbc", "stroke-width": 3 });
-        addRect(alert, x, y, 12, cardHeight, "#d16a46", 6);
-        addText(alert, formatChangeDate(change.date), x + 31, y + cardHeight * .35, {
-          size: 40, weight: 900, fill: "#8e3f29", spacing: 1
+        const rowOffset = (columns - itemsInRow) * (cardWidth + gapX) / 2;
+        const x = areaX + rowOffset + column * (cardWidth + gapX);
+        const y = areaY + row * (cardHeight + gapY);
+        const accent = change.kind === "closed" ? "#a43e31" : change.kind === "notice" ? "#b87928" : "#cf6847";
+        addRect(alert, x, y, cardWidth, cardHeight, "rgba(255,255,255,.96)", 22, {
+          stroke: "#ead8cf", "stroke-width": 3
         });
-        addText(alert, `${change.session || "時段"}・${change.room || "診室"}`, x + cardWidth - 27, y + cardHeight * .35, {
-          size: 30, weight: 750, anchor: "end", fill: "#7a6259"
+        addRect(alert, x, y, cardWidth, 8, accent, 4);
+        addRect(alert, x + 20, y + 22, 190, 48, accent, 24);
+        addText(alert, formatChangeDate(change.date), x + 115, y + 57, {
+          size: 29, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
+        });
+        const sessionRoom = `${change.session || "時段"}・${change.room || "診室"}`;
+        addText(alert, sessionRoom, x + cardWidth - 24, y + 58, {
+          size: fitTextSize(sessionRoom, 29, cardWidth - 250, 23), weight: 780, anchor: "end", fill: "#79655c"
         });
 
         let detail;
@@ -503,8 +548,8 @@
         } else {
           detail = `${change.originalDoctor || "原醫師"} → ${change.substituteDoctor || "代診醫師"}代診`;
         }
-        addText(alert, detail, x + 31, y + cardHeight * .78, {
-          size: 38, weight: 850, fill: "#433b38"
+        addText(alert, detail, x + 24, y + cardHeight - 25, {
+          size: fitTextSize(detail, 40, cardWidth - 48, 27), weight: 850, fill: "#403a37"
         });
       });
     }
@@ -512,11 +557,11 @@
 
     const grid = svgEl("g");
     const gridX = 150;
-    const gridY = denseChanges ? 800 : 690;
+    const gridY = changeLayout.gridY;
     const labelWidth = 390;
     const dayWidth = 435;
-    const headerHeight = denseChanges ? 130 : 140;
-    const rowHeight = denseChanges ? 225 : 250;
+    const headerHeight = changeLayout.tableHeaderHeight;
+    const rowHeight = changeLayout.tableRowHeight;
 
     addRect(grid, gridX, gridY, 3000, headerHeight + rowHeight * 4, "#ffffff", 30, { filter: "url(#cardShadow)" });
     addRect(grid, gridX, gridY, 3000, headerHeight, "#073f58", 30);

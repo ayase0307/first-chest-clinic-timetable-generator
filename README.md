@@ -7,7 +7,8 @@
 1. 使用 Chrome 或 Microsoft Edge 開啟 `index.html`。
 2. 更新民國年、月份、醫師與異動資料。
 3. 日期會自動依年月計算；吻合診次與原醫師的異動日期會自動從原門診扣除。
-4. 下載 `825×600` 供電視牆使用，或下載 `3300×2400` 高畫質 PNG。
+4. 異動1–3筆會單排顯示，4筆採2×2，5–6筆採3×2。
+5. 下載 `825×600` 供電視牆使用，或下載 `3300×2400` 高畫質 PNG。
 
 所有功能都可離線執行，門診資料不會上傳。
 
@@ -67,8 +68,10 @@ python tools/generate_qr.py
 - `index.html`：編輯器入口。
 - `app.js`：表單、海報排版與PNG匯出。
 - `date-logic.js`：年月、星期與異動日期運算。
+- `layout-logic.js`：異動筆數與海報區塊配置規則。
 - `styles.css`：編輯介面樣式。
 - `ornament-data.js`：離線內嵌的月曆與公告小裝飾。
 - `qr-data.js`：離線內嵌QR碼。
 - `tests/date-logic.test.js`：日期邏輯測試。
+- `tests/layout-logic.test.js`：1–6筆異動排版測試。
 - `data/`：跨電腦同步的月份JSON資料。
