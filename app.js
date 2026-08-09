@@ -493,7 +493,7 @@
     poster.appendChild(header);
 
     const activeChanges = (state.changes || []).filter((change) =>
-      change.date || change.session || change.room || change.originalDoctor || change.substituteDoctor
+      change.date || change.originalDoctor || change.substituteDoctor
     ).slice(0, 6);
     const changeLayout = window.TimetableLayoutLogic.getChangeLayout(activeChanges.length);
     const stackedChanges = changeLayout.stacked;
