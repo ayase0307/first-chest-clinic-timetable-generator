@@ -20,9 +20,13 @@ assert.deepEqual(
 );
 
 const fourChanges = getChangeLayout(4);
-assert.equal(fourChanges.alertHeight, 390);
-assert.equal(fourChanges.gridY, 850);
-assert.equal(fourChanges.gridY + fourChanges.tableHeaderHeight + fourChanges.tableRowHeight * 4, 1850);
+assert.equal(fourChanges.alertHeight, 500);
+assert.equal(fourChanges.gridY, 960);
+assert.equal(fourChanges.gridY + fourChanges.tableHeaderHeight + fourChanges.tableRowHeight * 4, 1848);
+
+const threeChanges = getChangeLayout(3);
+assert.equal(threeChanges.alertHeight, 330);
+assert.equal(threeChanges.gridY + threeChanges.tableHeaderHeight + threeChanges.tableRowHeight * 4, 1848);
 
 assert.equal(getChangeLayout(99).count, 6);
 

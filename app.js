@@ -492,9 +492,7 @@
     addText(header, "月", 3032, 316, { size: 52, weight: 900, fill: "#c65f3e" });
     poster.appendChild(header);
 
-    const activeChanges = (state.changes || []).filter((change) =>
-      change.date || change.originalDoctor || change.substituteDoctor
-    ).slice(0, 6);
+    const activeChanges = (state.changes || []).slice(0, 6);
     const changeLayout = window.TimetableLayoutLogic.getChangeLayout(activeChanges.length);
     const stackedChanges = changeLayout.stacked;
     const alertY = 430;
@@ -504,31 +502,31 @@
       stroke: "#efd5c9", "stroke-width": 3
     });
     addRect(alert, 150, alertY, 3000, 10, "#d36b4b", 5);
-    addRect(alert, 182, alertY + 24, 62, 62, "#f3d8cc", 18);
+    addRect(alert, 182, alertY + 24, 68, 68, "#f3d8cc", 20);
     if (window.ORNAMENT_ASSETS?.announcement) {
       alert.appendChild(svgEl("image", {
         href: window.ORNAMENT_ASSETS.announcement,
-        x: 190, y: alertY + 32, width: 46, height: 46,
+        x: 191, y: alertY + 33, width: 50, height: 50,
         preserveAspectRatio: "xMidYMid meet"
       }));
     }
-    addText(alert, "門診異動", 270, alertY + 71, {
-      size: 48, weight: 900, fill: "#873f2c", spacing: 4
+    addText(alert, "門診異動", 280, alertY + 76, {
+      size: 52, weight: 900, fill: "#873f2c", spacing: 4
     });
-    addRect(alert, 554, alertY + 29, 178, 52, "#f2d8cc", 26);
-    addText(alert, activeChanges.length ? `共 ${activeChanges.length} 筆` : "本月 0 筆", 643, alertY + 66, {
-      size: 27, weight: 850, anchor: "middle", fill: "#984a34", spacing: 2
+    addRect(alert, 578, alertY + 30, 190, 56, "#f2d8cc", 28);
+    addText(alert, activeChanges.length ? `共 ${activeChanges.length} 筆` : "本月 0 筆", 673, alertY + 70, {
+      size: 29, weight: 850, anchor: "middle", fill: "#984a34", spacing: 2
     });
-    addText(alert, activeChanges.length ? "其餘門診依固定時刻表正常看診" : "本月門診依固定時刻表正常看診", 3090, alertY + 68, {
-      size: 31, weight: 720, anchor: "end", fill: "#79665e", spacing: 1
+    addText(alert, activeChanges.length ? "其餘門診依固定時刻表正常看診" : "本月門診依固定時刻表正常看診", 3090, alertY + 72, {
+      size: 33, weight: 720, anchor: "end", fill: "#79665e", spacing: 1
     });
-    addRect(alert, 180, alertY + 99, 2940, 3, "#ead7ce", 1.5);
+    addRect(alert, 180, alertY + 108, 2940, 3, "#ead7ce", 1.5);
 
     if (!activeChanges.length) {
-      addText(alert, "本月無門診異動", 1650, alertY + 170, {
+      addText(alert, "本月無門診異動", 1650, alertY + 215, {
         size: 54, weight: 900, anchor: "middle", fill: "#8e3f29", spacing: 3
       });
-      addText(alert, "請依下方固定門診表正常看診", 1650, alertY + 222, {
+      addText(alert, "請依下方固定門診表正常看診", 1650, alertY + 272, {
         size: 34, weight: 720, anchor: "middle", fill: "#75635b"
       });
     } else {
@@ -536,10 +534,10 @@
       const columns = changeLayout.columns;
       const areaX = 180;
       const areaWidth = 2940;
-      const gapX = 20;
-      const gapY = 18;
-      const areaY = alertY + 119;
-      const areaHeight = alertHeight - 143;
+      const gapX = 24;
+      const gapY = 22;
+      const areaY = alertY + 126;
+      const areaHeight = alertHeight - 151;
       const cardWidth = (areaWidth - gapX * (columns - 1)) / columns;
       const cardHeight = (areaHeight - gapY * (rows - 1)) / rows;
       activeChanges.forEach((change, index) => {
@@ -549,30 +547,34 @@
         const rowOffset = (columns - itemsInRow) * (cardWidth + gapX) / 2;
         const x = areaX + rowOffset + column * (cardWidth + gapX);
         const y = areaY + row * (cardHeight + gapY);
-        const accent = change.kind === "closed" ? "#a43e31" : change.kind === "notice" ? "#b87928" : "#cf6847";
+        const incomplete = !change.date && !change.originalDoctor && !change.substituteDoctor;
+        const accent = incomplete ? "#718c95" : change.kind === "closed" ? "#a43e31" : change.kind === "notice" ? "#b87928" : "#cf6847";
         addRect(alert, x, y, cardWidth, cardHeight, "rgba(255,255,255,.97)", 20, {
-          stroke: "#ead8cf", "stroke-width": 3
+          stroke: incomplete ? "#a9bbc0" : "#ead8cf", "stroke-width": 3,
+          "stroke-dasharray": incomplete ? "14 10" : undefined
         });
         addRect(alert, x, y, 8, cardHeight, accent, 4);
-        addRect(alert, x + 24, y + 17, 190, 43, accent, 21.5);
-        addText(alert, formatChangeDate(change.date), x + 119, y + 48, {
-          size: 27, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
+        addRect(alert, x + 26, y + 24, 200, 50, accent, 25);
+        addText(alert, incomplete ? "待填資料" : formatChangeDate(change.date), x + 126, y + 60, {
+          size: 29, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
         });
         const sessionRoom = `${change.session || "時段"}・${change.room || "診室"}`;
-        addText(alert, sessionRoom, x + cardWidth - 24, y + 49, {
-          size: fitTextSize(sessionRoom, 28, cardWidth - 255, 22), weight: 780, anchor: "end", fill: "#79655c"
+        addText(alert, incomplete ? "新增異動" : sessionRoom, x + cardWidth - 28, y + 61, {
+          size: fitTextSize(sessionRoom, 31, cardWidth - 275, 24), weight: 780, anchor: "end", fill: incomplete ? "#718c95" : "#79655c"
         });
 
         let detail;
-        if (change.kind === "closed") {
+        if (incomplete) {
+          detail = "請填入日期、醫師與異動內容";
+        } else if (change.kind === "closed") {
           detail = `${change.originalDoctor || "原看診醫師"}｜休診`;
         } else if (change.kind === "notice") {
           detail = `${change.originalDoctor || "異動"}｜${change.substituteDoctor || "內容未填"}`;
         } else {
           detail = `${change.originalDoctor || "原醫師"} → ${change.substituteDoctor || "代診醫師"}代診`;
         }
-        addText(alert, detail, x + 26, y + cardHeight - 18, {
-          size: fitTextSize(detail, 37, cardWidth - 52, 25), weight: 850, fill: "#403a37"
+        addText(alert, detail, x + 28, y + cardHeight - 30, {
+          size: fitTextSize(detail, 42, cardWidth - 56, 28), weight: 850, fill: incomplete ? "#647b83" : "#403a37"
         });
       });
     }

@@ -16,10 +16,10 @@
       stacked,
       rows,
       columns,
-      alertHeight: stacked ? 390 : 250,
-      gridY: stacked ? 850 : 710,
-      tableHeaderHeight: stacked ? 120 : 140,
-      tableRowHeight: stacked ? 220 : 250
+      alertHeight: stacked ? 500 : 330,
+      gridY: stacked ? 960 : 790,
+      tableHeaderHeight: stacked ? 100 : 130,
+      tableRowHeight: stacked ? 197 : 232
     };
   }
 
