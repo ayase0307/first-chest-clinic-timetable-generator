@@ -35,6 +35,19 @@ git remote add origin <REMOTE_URL>
 git push -u origin main
 ```
 
+## GitHub自動同步與發布
+
+專案已包含 `.github/workflows/pages.yml`。推送到 `main` 後，GitHub Actions會先執行測試，再將必要的靜態檔案發布到GitHub Pages。
+
+首次設定需要：
+
+1. 執行 `gh auth login -h github.com` 重新登入GitHub。
+2. 建立遠端Repo並設定為 `origin`；若使用GitHub Free的Pages，Repo需設為公開。
+3. 在Repo的 **Settings → Pages → Build and deployment** 選擇 **GitHub Actions**。
+4. 首次推送 `main`。
+
+完成首次設定後，可直接執行 `sync-and-publish.cmd`。它會依序拉取遠端、提交目前變更、推送 `main`，並觸發網站重新發布。
+
 ## 自動日期規則
 
 - 民國年自動加1911換算西元。
@@ -69,6 +82,8 @@ python tools/generate_qr.py
 - `app.js`：表單、海報排版與PNG匯出。
 - `date-logic.js`：年月、星期與異動日期運算。
 - `layout-logic.js`：異動筆數與海報區塊配置規則。
+- `.github/workflows/pages.yml`：推送 `main` 後自動測試及發布GitHub Pages。
+- `sync-and-publish.cmd`：Windows一鍵同步及觸發發布。
 - `styles.css`：編輯介面樣式。
 - `ornament-data.js`：離線內嵌的月曆與公告小裝飾。
 - `qr-data.js`：離線內嵌QR碼。

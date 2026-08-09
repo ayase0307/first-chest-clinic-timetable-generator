@@ -352,6 +352,18 @@
     return Math.max(minimumSize, Math.min(preferredSize, Math.floor((maxWidth / units) * .94)));
   }
 
+  function getClinicIdentity(value) {
+    const clinic = String(value || "").trim();
+    const primaryName = "第一胸腔病防治所";
+    if (clinic.endsWith(primaryName)) {
+      return {
+        organization: clinic.slice(0, -primaryName.length).trim(),
+        primaryName
+      };
+    }
+    return { organization: "門診服務資訊", primaryName: clinic || "門診時刻表" };
+  }
+
   function addRect(parent, x, y, width, height, fill, radius = 0, extra = {}) {
     const node = svgEl("rect", { x, y, width, height, rx: radius, fill, ...extra });
     parent.appendChild(node);
@@ -438,14 +450,18 @@
     addRect(poster, 82, 82, 3136, 2236, "rgba(255,255,255,.83)", 44, { filter: "url(#cardShadow)" });
     addRect(poster, 82, 82, 24, 2236, "#0a5871", 12);
 
+    const clinicIdentity = getClinicIdentity(state.clinic);
     const header = svgEl("g");
     addRect(header, 150, 110, 3000, 280, "url(#headerGradient)", 44, { filter: "url(#cardShadow)" });
     addRect(header, 150, 110, 22, 280, "#e47b57", 11);
-    addText(header, state.clinic, 220, 177, {
-      size: fitTextSize(state.clinic, 35, 1480, 28), weight: 780, fill: "#c8e2e7", spacing: 2
+    addText(header, clinicIdentity.organization || "門診服務資訊", 220, 164, {
+      size: fitTextSize(clinicIdentity.organization, 30, 1480, 25), weight: 780, fill: "#a9d2d9", spacing: 4
     });
-    addRect(header, 220, 202, 430, 6, "#e47b57", 3);
-    addText(header, "門診時刻表", 215, 336, { size: 118, weight: 900, fill: "#ffffff", spacing: 8 });
+    addText(header, clinicIdentity.primaryName, 215, 276, {
+      size: fitTextSize(clinicIdentity.primaryName, 84, 1510, 52), weight: 900, fill: "#ffffff", spacing: 4
+    });
+    addRect(header, 220, 303, 118, 7, "#e47b57", 3.5);
+    addText(header, "門診時刻表", 365, 338, { size: 56, weight: 850, fill: "#f6d7ca", spacing: 11 });
 
     addRect(header, 1848, 145, 4, 210, "rgba(255,255,255,.2)", 2);
     addText(header, "委託經營", 1910, 178, { size: 25, weight: 800, fill: "#91c2cc", spacing: 4 });
@@ -487,23 +503,26 @@
     addRect(alert, 150, alertY, 3000, alertHeight, "url(#alertGradient)", 36, {
       stroke: "#efd5c9", "stroke-width": 3
     });
-    addRect(alert, 150, alertY, 270, alertHeight, "#a84b34", 36);
-    addRect(alert, 386, alertY, 34, alertHeight, "#a84b34");
+    addRect(alert, 150, alertY, 3000, 10, "#d36b4b", 5);
     const labelCenterY = alertY + alertHeight / 2;
+    const labelY = labelCenterY - 62;
+    addRect(alert, 174, labelY, 270, 124, "rgba(255,255,255,.96)", 26, {
+      stroke: "#e8d1c6", "stroke-width": 3
+    });
+    addRect(alert, 193, labelY + 21, 82, 82, "#f6dfd4", 22);
     if (window.ORNAMENT_ASSETS?.announcement) {
       alert.appendChild(svgEl("image", {
         href: window.ORNAMENT_ASSETS.announcement,
-        x: 178, y: labelCenterY - 89, width: 92, height: 92,
+        x: 201, y: labelY + 29, width: 66, height: 66,
         preserveAspectRatio: "xMidYMid meet"
       }));
     }
-    addText(alert, "門診", 332, labelCenterY - 23, { size: 29, weight: 800, anchor: "middle", fill: "#f7d6c8", spacing: 3 });
-    addText(alert, "異動", 332, labelCenterY + 30, { size: 43, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 4 });
-    if (activeChanges.length) {
-      addText(alert, `共 ${activeChanges.length} 筆`, 332, labelCenterY + 76, {
-        size: 25, weight: 760, anchor: "middle", fill: "#f7d6c8", spacing: 2
-      });
-    }
+    addText(alert, "門診異動", 294, labelCenterY - 8, {
+      size: 35, weight: 900, fill: "#873f2c", spacing: 2
+    });
+    addText(alert, activeChanges.length ? `本月共 ${activeChanges.length} 筆` : "本月 0 筆", 294, labelCenterY + 35, {
+      size: 24, weight: 760, fill: "#9b7062", spacing: 1
+    });
 
     if (!activeChanges.length) {
       addText(alert, "本月無門診異動", 490, alertY + 88, { size: 54, weight: 900, fill: "#8e3f29", spacing: 2 });
