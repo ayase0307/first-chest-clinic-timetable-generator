@@ -226,6 +226,20 @@ button { cursor: pointer; }
   font-weight: 850;
 }
 .auto-date-button:hover { background: #dceef1; }
+.calendar-warning {
+  grid-column: 1 / -1;
+  margin: -2px 0 2px;
+  padding: 9px 10px;
+  border-left: 3px solid #c0512f;
+  border-radius: 0 8px 8px 0;
+  color: #8e3f29;
+  background: #fdf0ea;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+.calendar-warning[hidden] { display: none; }
+
 .auto-date-note {
   grid-column: 1 / -1;
   margin: -2px 0 2px;

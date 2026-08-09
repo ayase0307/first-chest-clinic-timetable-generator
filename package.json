@@ -4,6 +4,6 @@
   "private": true,
   "description": "第一胸腔病防治所門診時刻表產生器",
   "scripts": {
-    "test": "node tests/date-logic.test.js && node tests/layout-logic.test.js"
+    "test": "node tests/date-logic.test.js && node tests/layout-logic.test.js && node tests/state-logic.test.js"
   }
 }

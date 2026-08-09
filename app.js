@@ -73,8 +73,12 @@
     closureNote: "週六下午、週日及例假日休診｜颱風天災依臺北市政府停班公告休診"
   };
 
+  const MAX_CHANGES = window.TimetableLayoutLogic.MAX_CHANGES;
+
   let state = loadState();
   let toastTimer = null;
+  let renderTimer = null;
+  let calendarWarning = null;
 
   const $ = (selector) => document.querySelector(selector);
   const basicFields = $("#basic-fields");
@@ -87,14 +91,34 @@
     return JSON.parse(JSON.stringify(value));
   }
 
+  // 唯一的資料入口驗證：localStorage、檔案匯入、雲端載入都走這裡，
+  // 格式不符的資料一律擋在 state 之外，避免整個編輯器被壞掉的備份卡死。
+  function describeProblem(incoming) {
+    return window.TimetableStateLogic.describeProblem(incoming, defaultData.rows.length, days.length);
+  }
+
   function loadState() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return clone(defaultData);
-      return mergeState(clone(defaultData), JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      if (describeProblem(parsed)) return clone(defaultData);
+      return mergeState(clone(defaultData), parsed);
     } catch (error) {
       return clone(defaultData);
     }
+  }
+
+  // 回傳是否有異動被截斷，讓呼叫端可以提醒使用者。
+  function applyState(incoming) {
+    state = mergeState(clone(defaultData), incoming);
+    const truncated = state.changes.length > MAX_CHANGES;
+    if (truncated) state.changes = state.changes.slice(0, MAX_CHANGES);
+    autoPopulateDates();
+    persist();
+    buildEditors();
+    renderPoster();
+    return truncated;
   }
 
   function mergeState(base, incoming) {
@@ -133,12 +157,28 @@
       autoPopulateDates();
     }
     persist();
+    scheduleRender();
+  }
+
+  // 每次按鍵都重畫整張海報（約 250 個 SVG 節點）在診間電腦上會頓，先合併再畫。
+  function scheduleRender() {
+    window.clearTimeout(renderTimer);
+    renderTimer = window.setTimeout(renderPoster, 80);
+  }
+
+  function flushRender() {
+    window.clearTimeout(renderTimer);
     renderPoster();
   }
 
   function persist() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     const saveState = $("#save-state");
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+      saveState.textContent = "無法自動儲存，請按「備份資料」";
+      return;
+    }
     saveState.textContent = "儲存中…";
     window.clearTimeout(persist.timer);
     persist.timer = window.setTimeout(() => { saveState.textContent = "已自動儲存"; }, 350);
@@ -165,6 +205,8 @@
     } else {
       control = document.createElement("input");
       control.type = options.type || "text";
+      if (options.min !== undefined) control.min = options.min;
+      if (options.max !== undefined) control.max = options.max;
     }
     control.value = getPath(path) ?? "";
     control.placeholder = options.placeholder || "";
@@ -200,7 +242,7 @@
         autoPopulateDates();
         persist();
         buildAlertEditors();
-        renderPoster();
+        flushRender();
       });
       head.append(title, remove);
 
@@ -229,7 +271,7 @@
       alertFields.appendChild(card);
     });
 
-    if (state.changes.length < 6) {
+    if (state.changes.length < MAX_CHANGES) {
       const add = document.createElement("button");
       add.type = "button";
       add.className = "add-change-button";
@@ -241,16 +283,24 @@
         autoPopulateDates();
         persist();
         buildAlertEditors();
-        renderPoster();
+        flushRender();
       });
       alertFields.appendChild(add);
+    } else {
+      const limit = document.createElement("p");
+      limit.className = "empty-changes";
+      limit.textContent = `海報版面最多容納 ${MAX_CHANGES} 筆異動，若還有其他異動請寫進「休診說明」。`;
+      alertFields.appendChild(limit);
     }
   }
 
   function buildEditors() {
     basicFields.replaceChildren(
-      field("民國年", "year"),
-      field("月份", "month"),
+      field("民國年", "year", { type: "number", min: 100, max: 200 }),
+      field("月份", "month", {
+        type: "select",
+        choices: Array.from({ length: 12 }, (unused, index) => [String(index + 1), `${index + 1} 月`])
+      }),
       field("機構名稱", "clinic", { full: true }),
       field("經營單位", "operator", { full: true }),
       field("更新日期", "updateDate", { full: true })
@@ -258,6 +308,9 @@
     const dateNote = document.createElement("p");
     dateNote.className = "auto-date-note";
     dateNote.textContent = "日期會依民國年與月份自動建立；若異動資料的診次、原醫師吻合，該日會自動從原門診日期中扣除。";
+    calendarWarning = document.createElement("p");
+    calendarWarning.className = "calendar-warning";
+    calendarWarning.textContent = "民國年無效，日期已停止自動更新，海報上的月份與日期不會是正確的。";
     const recalculate = document.createElement("button");
     recalculate.type = "button";
     recalculate.className = "auto-date-button";
@@ -268,10 +321,10 @@
         return;
       }
       persist();
-      renderPoster();
+      flushRender();
       showToast("日期與異動已重新計算");
     });
-    basicFields.append(dateNote, recalculate);
+    basicFields.append(dateNote, calendarWarning, recalculate);
 
     buildAlertEditors();
 
@@ -394,34 +447,48 @@
 
     const hasSpecialty = Boolean(cell.specialty);
     const hasAlt = Boolean(cell.alt);
-    const nameY = y + (hasAlt ? 73 : 88) * scale;
-    addText(group, cell.doctor || "未填", x + width / 2, nameY, {
-      size: 70 * scale, weight: 850, anchor: "middle", fill: "#073f58", spacing: 2
+    const layout = window.TimetableLayoutLogic.getCellLayout(hasSpecialty, hasAlt);
+    // 格寬固定、格高會依異動筆數縮放，所以先換算回未縮放空間再套 fitTextSize。
+    const fitInCell = (text, preferred, maxWidth, minimum) =>
+      fitTextSize(text, preferred, maxWidth / scale, minimum) * scale;
+
+    addText(group, cell.doctor || "未填", x + width / 2, y + layout.nameY * scale, {
+      size: fitInCell(cell.doctor || "未填", layout.nameSize, width - 40, 34),
+      weight: 850, anchor: "middle", fill: "#073f58", spacing: 2
     });
 
     if (hasSpecialty) {
-      const badgeWidth = Math.max(128, cell.specialty.length * 39 + 48);
-      addRect(group, x + (width - badgeWidth) / 2, y + 104 * scale, badgeWidth, 52 * scale, "#d9ecee", 26 * scale);
-      addText(group, cell.specialty, x + width / 2, y + 141 * scale, {
-        size: 31 * scale, weight: 800, anchor: "middle", fill: "#176778", spacing: 2
+      const specialtySize = fitInCell(cell.specialty, layout.specialtySize, width - 120, 20);
+      const badgeWidth = Math.min(width - 40, Math.max(128, cell.specialty.length * specialtySize * 1.26 + 48));
+      addRect(group, x + (width - badgeWidth) / 2, y + layout.specialtyY * scale, badgeWidth,
+        layout.specialtyHeight * scale, "#d9ecee", (layout.specialtyHeight / 2) * scale);
+      addText(group, cell.specialty, x + width / 2, y + layout.specialtyTextY * scale, {
+        size: specialtySize, weight: 800, anchor: "middle", fill: "#176778", spacing: 2
       });
     }
 
     if (cell.dates) {
-      addText(group, cell.dates, x + width / 2, y + (hasAlt ? 145 : 190) * scale, {
-        size: 38 * scale, weight: 650, anchor: "middle", fill: "#58727b", spacing: 1
+      addText(group, cell.dates, x + width / 2, y + layout.datesY * scale, {
+        size: fitInCell(cell.dates, layout.datesSize, width - 56, 22),
+        weight: 650, anchor: "middle", fill: "#58727b", spacing: 1
       });
     }
 
     if (hasAlt) {
-      addRect(group, x + 28, y + 172 * scale, width - 56, 54 * scale, "#f5dcd0", 27 * scale);
-      addText(group, cell.alt, x + width / 2, y + 210 * scale, {
-        size: 31 * scale, weight: 850, anchor: "middle", fill: "#a4462c"
+      addRect(group, x + 28, y + layout.altY * scale, width - 56, layout.altHeight * scale,
+        "#f5dcd0", (layout.altHeight / 2) * scale);
+      addText(group, cell.alt, x + width / 2, y + layout.altTextY * scale, {
+        size: fitInCell(cell.alt, layout.altSize, width - 90, 18),
+        weight: 850, anchor: "middle", fill: "#a4462c"
       });
     }
   }
 
   function renderPoster() {
+    window.clearTimeout(renderTimer);
+    if (calendarWarning) {
+      calendarWarning.hidden = Boolean(window.TimetableDateLogic.getCalendar(state));
+    }
     poster.replaceChildren();
     poster.setAttribute("xmlns", SVG_NS);
     poster.setAttribute("width", "3300");
@@ -492,7 +559,7 @@
     addText(header, "月", 3032, 316, { size: 52, weight: 900, fill: "#c65f3e" });
     poster.appendChild(header);
 
-    const activeChanges = (state.changes || []).slice(0, 6);
+    const activeChanges = (state.changes || []).slice(0, MAX_CHANGES);
     const changeLayout = window.TimetableLayoutLogic.getChangeLayout(activeChanges.length);
     const stackedChanges = changeLayout.stacked;
     const alertY = 430;
@@ -679,10 +746,12 @@
   }
 
   async function exportPng(width, height) {
-    renderPoster();
+    flushRender();
     const cloneSvg = poster.cloneNode(true);
-    cloneSvg.setAttribute("width", "3300");
-    cloneSvg.setAttribute("height", "2400");
+    // 讓瀏覽器直接以輸出尺寸描字，而不是先畫成 3300×2400 再縮小，
+    // 825×600 的電視牆版文字才不會糊掉。viewBox 不動，版面比例不變。
+    cloneSvg.setAttribute("width", String(width));
+    cloneSvg.setAttribute("height", String(height));
     cloneSvg.setAttribute("xmlns", SVG_NS);
     const serialized = new XMLSerializer().serializeToString(cloneSvg);
     const svgBlob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
@@ -705,6 +774,7 @@
     URL.revokeObjectURL(url);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 1));
+    if (!blob) throw new Error("canvas.toBlob returned null");
     const month = String(state.month).padStart(2, "0");
     downloadBlob(blob, `${state.year}${month}_門診時刻表_${width}x${height}.png`);
     showToast(`已輸出 ${width}×${height} PNG`);
@@ -724,27 +794,53 @@
   $("#json-file").addEventListener("change", async (event) => {
     const [file] = event.target.files;
     if (!file) return;
+    let incoming;
     try {
-      const incoming = JSON.parse(await file.text());
-      state = mergeState(clone(defaultData), incoming);
-      autoPopulateDates();
-      persist();
-      buildEditors();
-      renderPoster();
-      showToast("資料已匯入");
+      incoming = JSON.parse(await file.text());
     } catch (error) {
       showToast("JSON格式無法讀取");
+      event.target.value = "";
+      return;
     }
+    const problem = describeProblem(incoming);
+    if (problem) {
+      showToast(`${problem}，已保留目前資料`);
+      event.target.value = "";
+      return;
+    }
+    const truncated = applyState(incoming);
+    showToast(truncated ? `資料已匯入，異動只保留前 ${MAX_CHANGES} 筆` : "資料已匯入");
     event.target.value = "";
   });
 
+  const loadCloud = $("#load-cloud");
+  if (location.protocol === "http:" || location.protocol === "https:") {
+    loadCloud.hidden = false;
+    loadCloud.addEventListener("click", async () => {
+      const month = String(state.month).padStart(2, "0");
+      const filename = `${state.year}${month}_門診資料.json`;
+      let incoming;
+      try {
+        const response = await fetch(`data/${filename}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(String(response.status));
+        incoming = await response.json();
+      } catch (error) {
+        showToast(`雲端沒有 ${state.year} 年 ${month} 月的資料（${filename}）`);
+        return;
+      }
+      const problem = describeProblem(incoming);
+      if (problem) {
+        showToast(`${problem}，已保留目前資料`);
+        return;
+      }
+      const truncated = applyState(incoming);
+      showToast(truncated ? `已載入雲端資料，異動只保留前 ${MAX_CHANGES} 筆` : "已載入雲端資料");
+    });
+  }
+
   $("#reset-data").addEventListener("click", () => {
-    if (!window.confirm("要清除目前編輯內容並還原115年8月範例嗎？")) return;
-    state = clone(defaultData);
-    autoPopulateDates();
-    persist();
-    buildEditors();
-    renderPoster();
+    if (!window.confirm(`要清除目前編輯內容並還原 ${defaultData.year} 年 ${defaultData.month} 月範例嗎？`)) return;
+    applyState(clone(defaultData));
     showToast("已還原範例資料");
   });
 
