@@ -28,25 +28,22 @@ git push
 
 4. 另一台電腦執行 `git pull`，開啟產生器後按「匯入資料」。
 
-本機倉庫尚未綁定遠端；建立 GitHub、GitLab 或其他私人遠端後，執行：
+遠端Repo與公開網站已完成設定：
+
+- Repo：<https://github.com/ayase0307/first-chest-clinic-timetable-generator>
+- 網站：<https://ayase0307.github.io/first-chest-clinic-timetable-generator/>
+
+在另一台電腦首次使用時執行：
 
 ```bash
-git remote add origin <REMOTE_URL>
-git push -u origin main
+git clone https://github.com/ayase0307/first-chest-clinic-timetable-generator.git
 ```
 
 ## GitHub自動同步與發布
 
 專案已包含 `.github/workflows/pages.yml`。推送到 `main` 後，GitHub Actions會先執行測試，再將必要的靜態檔案發布到GitHub Pages。
 
-首次設定需要：
-
-1. 執行 `gh auth login -h github.com` 重新登入GitHub。
-2. 建立遠端Repo並設定為 `origin`；若使用GitHub Free的Pages，Repo需設為公開。
-3. 在Repo的 **Settings → Pages → Build and deployment** 選擇 **GitHub Actions**。
-4. 首次推送 `main`。
-
-完成首次設定後，可直接執行 `sync-and-publish.cmd`。它會依序拉取遠端、提交目前變更、推送 `main`，並觸發網站重新發布。
+本專案已將 `origin`、公開Repo及GitHub Pages設定完成。之後可直接執行 `sync-and-publish.cmd`；它會依序拉取遠端、提交目前變更、推送 `main`，並觸發網站重新發布。
 
 ## 自動日期規則
 
