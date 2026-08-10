@@ -530,7 +530,7 @@
     addText(header, clinicIdentity.organization || "門診服務資訊", 220, 162, {
       size: fitTextSize(clinicIdentity.organization, 32, 1120, 25), weight: 780, fill: "#a9d2d9", spacing: 4
     });
-    addText(header, clinicIdentity.primaryName, 218, 278, {
+    addText(header, clinicIdentity.primaryName, 220, 278, {
       size: fitTextSize(clinicIdentity.primaryName, 100, 1120, 52), weight: 900, fill: "#ffffff", spacing: 4
     });
     addRect(header, 220, 332, 118, 7, "#e47b57", 3.5);
@@ -591,7 +591,8 @@
     addText(alert, activeChanges.length ? `共 ${activeChanges.length} 筆` : "本月 0 筆", 673, alertY + 70, {
       size: 29, weight: 850, anchor: "middle", fill: "#984a34", spacing: 2
     });
-    addText(alert, activeChanges.length ? "其餘門診依固定時刻表正常看診" : "本月門診依固定時刻表正常看診", 3090, alertY + 72, {
+    // 右緣對齊下方分隔線與異動卡的 3120，原本 3090 會看起來莫名縮排。
+    addText(alert, activeChanges.length ? "其餘門診依固定時刻表正常看診" : "本月門診依固定時刻表正常看診", 3120, alertY + 72, {
       size: 33, weight: 720, anchor: "end", fill: "#79665e", spacing: 1
     });
     addRect(alert, 180, alertY + 108, 2940, 3, "#ead7ce", 1.5);
@@ -696,26 +697,50 @@
       fx += width + gap;
     });
 
-    addText(footer, "門診時間", 205, footerY + 62, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
-    addText(footer, state.morningClinic, 205, footerY + 148, { size: 45, weight: 850, fill: "#073f58" });
-    addText(footer, state.afternoonClinic, 205, footerY + 231, { size: 45, weight: 850, fill: "#073f58" });
+    // 三張卡共用同一套規格：文字內縮 55、標題 34、內容整組對卡片垂直置中。
+    const cardTextInset = 55;
+    const hoursWidth = 700;
+    addText(footer, "門診時間", 205, footerY + 99, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
+    addText(footer, state.morningClinic, 205, footerY + 185, {
+      size: fitTextSize(state.morningClinic, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
+    });
+    addText(footer, state.afternoonClinic, 205, footerY + 268, {
+      size: fitTextSize(state.afternoonClinic, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
+    });
 
     const regX = 150 + widths[0] + gap;
-    addText(footer, "現場掛號", regX + 55, footerY + 62, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
-    addText(footer, `上午 ${state.morningRegistration}`, regX + 55, footerY + 148, { size: 45, weight: 850, fill: "#073f58" });
-    addText(footer, `下午 ${state.afternoonRegistration}`, regX + 55, footerY + 231, { size: 45, weight: 850, fill: "#073f58" });
+    const morningReg = `上午 ${state.morningRegistration}`;
+    const afternoonReg = `下午 ${state.afternoonRegistration}`;
+    addText(footer, "現場掛號", regX + cardTextInset, footerY + 99, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
+    addText(footer, morningReg, regX + cardTextInset, footerY + 185, {
+      size: fitTextSize(morningReg, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
+    });
+    addText(footer, afternoonReg, regX + cardTextInset, footerY + 268, {
+      size: fitTextSize(afternoonReg, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
+    });
 
     const contactX = regX + widths[1] + gap;
-    addText(footer, "聯絡資訊", contactX + 45, footerY + 55, { size: 31, weight: 900, fill: "#2a7888", spacing: 4 });
-    addText(footer, state.primaryPhone, contactX + 45, footerY + 116, { size: 47, weight: 900, fill: "#073f58" });
-    addText(footer, state.otherPhones, contactX + 45, footerY + 159, { size: 27, weight: 650, fill: "#60777f" });
-    addText(footer, state.address, contactX + 45, footerY + 213, { size: 29, weight: 720, fill: "#3f5b64" });
-    addText(footer, state.website, contactX + 45, footerY + 255, { size: 27, weight: 650, fill: "#71868d", spacing: 1 });
+    // 文字欄可用寬度＝到 QR 組左緣前留 40 的溝槽，地址變長只會縮小不會壓到 QR。
+    const contactWidth = 606;
+    addText(footer, "聯絡資訊", contactX + cardTextInset, footerY + 85, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
+    addText(footer, state.primaryPhone, contactX + cardTextInset, footerY + 146, {
+      size: fitTextSize(state.primaryPhone, 47, contactWidth, 30), weight: 900, fill: "#073f58"
+    });
+    addText(footer, state.otherPhones, contactX + cardTextInset, footerY + 189, {
+      size: fitTextSize(state.otherPhones, 27, contactWidth, 20), weight: 650, fill: "#60777f"
+    });
+    addText(footer, state.address, contactX + cardTextInset, footerY + 243, {
+      size: fitTextSize(state.address, 29, contactWidth, 20), weight: 720, fill: "#3f5b64"
+    });
+    addText(footer, state.website, contactX + cardTextInset, footerY + 285, {
+      size: fitTextSize(state.website, 27, contactWidth, 20), weight: 650, fill: "#71868d", spacing: 1
+    });
 
     const qrSize = 250;
     const qrY = footerY + 25;
-    const mapQrX = contactX + 770;
-    const facebookQrX = contactX + 1040;
+    // 兩張 QR 當一組靠右，框間留 40、右緣同樣內縮 55（原本兩框只差 4，看起來是黏在一起的）。
+    const mapQrX = contactX + 709;
+    const facebookQrX = contactX + 1015;
     if (window.QR_ASSETS?.googleMaps) {
       addRect(footer, mapQrX - 8, qrY - 8, qrSize + 16, qrSize + 16, "#ffffff", 18, { stroke: "#d9e4e6", "stroke-width": 2 });
       footer.appendChild(svgEl("image", { href: window.QR_ASSETS.googleMaps, x: mapQrX, y: qrY, width: qrSize, height: qrSize }));
@@ -728,9 +753,10 @@
     }
     poster.appendChild(footer);
 
-    addText(poster, state.closureNote, 150, 2287, { size: 35, weight: 750, fill: "#566e76", spacing: 1 });
-    addRect(poster, 2946, 2260, 204, 50, "#073f58", 25);
-    addText(poster, "資訊確認", 3048, 2295, { size: 27, weight: 850, anchor: "middle", fill: "#ffffff", spacing: 3 });
+    // 基線 2275 讓這行在頁尾卡（收在 2210）與白底卡下緣（2318）之間上下各留 33。
+    addText(poster, state.closureNote, 150, 2275, {
+      size: fitTextSize(state.closureNote, 35, 3000, 24), weight: 750, fill: "#566e76", spacing: 1
+    });
   }
 
   function showToast(message) {
