@@ -13,15 +13,18 @@
     const rows = stacked ? 2 : 1;
     const columns = count === 4 ? 2 : count > 0 ? 3 : 1;
 
+    // 標題列收在 456，異動卡固定從 505 起；不論異動幾筆，門診表都收在 1848，
+    // 下方才留得出頁尾卡（1900–2240）與滿版底條（2300–2400）。
     return {
       count,
       stacked,
       rows,
       columns,
-      alertHeight: stacked ? 500 : 330,
-      gridY: stacked ? 960 : 790,
-      tableHeaderHeight: stacked ? 100 : 130,
-      tableRowHeight: stacked ? 197 : 232
+      alertY: 505,
+      alertHeight: stacked ? 480 : 330,
+      gridY: stacked ? 1025 : 875,
+      tableHeaderHeight: stacked ? 111 : 113,
+      tableRowHeight: stacked ? 178 : 215
     };
   }
 

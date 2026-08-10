@@ -19,14 +19,15 @@ assert.deepEqual(
   [[2, 2, true], [2, 3, true], [2, 3, true]]
 );
 
-const fourChanges = getChangeLayout(4);
-assert.equal(fourChanges.alertHeight, 500);
-assert.equal(fourChanges.gridY, 960);
-assert.equal(fourChanges.gridY + fourChanges.tableHeaderHeight + fourChanges.tableRowHeight * 4, 1848);
+// 不論異動幾筆，異動卡與門診表之間都留 40，門診表都收在 1848。
+[1, 2, 3, 4, 5, 6].forEach((count) => {
+  const layout = getChangeLayout(count);
+  assert.equal(layout.alertY + layout.alertHeight + 40, layout.gridY, `${count} 筆：異動卡與門診表間距不是 40`);
+  assert.equal(layout.gridY + layout.tableHeaderHeight + layout.tableRowHeight * 4, 1848, `${count} 筆：門診表沒收在 1848`);
+});
 
-const threeChanges = getChangeLayout(3);
-assert.equal(threeChanges.alertHeight, 330);
-assert.equal(threeChanges.gridY + threeChanges.tableHeaderHeight + threeChanges.tableRowHeight * 4, 1848);
+assert.equal(getChangeLayout(4).alertHeight, 480);
+assert.equal(getChangeLayout(3).alertHeight, 330);
 
 assert.equal(getChangeLayout(99).count, MAX_CHANGES);
 

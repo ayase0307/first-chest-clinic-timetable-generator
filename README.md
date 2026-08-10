@@ -89,7 +89,6 @@ python tools/generate_qr.py
 - `.github/workflows/pages.yml`：推送 `main` 後自動測試及發布GitHub Pages。
 - `sync-and-publish.cmd`：Windows一鍵同步及觸發發布。
 - `styles.css`：編輯介面樣式。
-- `ornament-data.js`：離線內嵌的月曆與公告小裝飾。
 - `qr-data.js`：離線內嵌QR碼。
 - `tests/date-logic.test.js`：日期邏輯測試。
 - `tests/layout-logic.test.js`：1–6筆異動排版與門診格不疊字測試。

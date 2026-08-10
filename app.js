@@ -383,10 +383,17 @@
     return node;
   }
 
+  // 海報配色：深藍主色、青綠輔色、橘色重點、髮絲線。全部走扁平＋細框，不用陰影。
+  const INK = "#12475f";
+  const TEAL = "#1c7c8c";
+  const ORANGE = "#e8763a";
+  const HAIRLINE = "#e2ecef";
+  const MUTED = "#7d8f95";
+
   function addText(parent, text, x, y, options = {}) {
     const node = svgEl("text", {
       x, y,
-      fill: options.fill || "#073f58",
+      fill: options.fill || INK,
       "font-size": options.size || 42,
       "font-weight": options.weight || 600,
       "text-anchor": options.anchor || "start",
@@ -397,10 +404,15 @@
     return node;
   }
 
-  function fitTextSize(text, preferredSize, maxWidth, minimumSize = 24) {
-    const units = Array.from(String(text || "")).reduce((total, character) => {
+  // 一個全形字算 1 個字寬單位、半形算 0.58，用來估算文字實際佔寬。
+  function textUnits(text) {
+    return Array.from(String(text || "")).reduce((total, character) => {
       return total + (/^[\x00-\x7F]$/.test(character) ? 0.58 : 1);
     }, 0);
+  }
+
+  function fitTextSize(text, preferredSize, maxWidth, minimumSize = 24) {
+    const units = textUnits(text);
     if (!units) return preferredSize;
     const fitted = Math.floor((maxWidth / units) * .94);
     // maxWidth 是硬約束、minimumSize 只是可讀性偏好：字太多時寧可縮到下限以下，
@@ -427,24 +439,106 @@
     return node;
   }
 
-  function drawCell(group, cell, x, y, width, height, rowIndex) {
-    const afternoon = rowIndex >= 2;
-    const baseFill = afternoon ? "#f3f7f4" : "#f5f9fa";
+  // Lucide 風格的線條圖示，作者座標 24×24。
+  const ICONS = {
+    briefcase: [
+      "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16",
+      "M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"
+    ],
+    calendar: [
+      "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+      "M16 2v4", "M8 2v4", "M3 10h18"
+    ],
+    megaphone: ["M3 11l18-5v12L3 14z", "M11.6 16.8a3 3 0 1 1-5.8-1.6"],
+    clock: ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", "M12 6.5V12l3.6 2.1"],
+    pin: ["M12 21.5s7-6.4 7-11.5a7 7 0 1 0-14 0c0 5.1 7 11.5 7 11.5z", "M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"],
+    phone: ["M21.5 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 1.6 4.2 2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L7.6 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2.1z"]
+  };
+
+  function addIcon(parent, name, cx, cy, size, color, strokeWidth = 2) {
+    const group = svgEl("g", {
+      transform: `translate(${cx - size / 2} ${cy - size / 2}) scale(${size / 24})`,
+      fill: "none", stroke: color, "stroke-width": strokeWidth,
+      "stroke-linecap": "round", "stroke-linejoin": "round"
+    });
+    (ICONS[name] || []).forEach((d) => group.appendChild(svgEl("path", { d })));
+    parent.appendChild(group);
+  }
+
+  function addIconBadge(parent, name, cx, cy, radius, fill = TEAL) {
+    parent.appendChild(svgEl("circle", { cx, cy, r: radius, fill }));
+    addIcon(parent, name, cx, cy, radius * 1.24, "#ffffff", 2.1);
+  }
+
+  // 背景的有機色塊、葉子與點陣。純裝飾，全部壓在內容底下且不進入文字區。
+  function addBackdrop(parent) {
+    const back = svgEl("g");
+    const blob = (cx, cy, rx, ry, fill, opacity, angle) => {
+      back.appendChild(svgEl("ellipse", {
+        cx, cy, rx, ry, fill, opacity,
+        transform: angle ? `rotate(${angle} ${cx} ${cy})` : undefined
+      }));
+    };
+    blob(150, 236, 340, 250, "#daeef1", .75, -18);
+    blob(60, 470, 210, 150, "#e7f4ef", .85, 12);
+    blob(3200, 250, 400, 330, "#dbeef2", .55, 24);
+    blob(2980, 50, 260, 200, "#e9f5f7", .8, -10);
+    blob(20, 1900, 330, 400, "#e4f2f4", .8, 0);
+    blob(3290, 1520, 250, 320, "#eaf4f6", .7, 0);
+
+    const leaf = "M0 0C34-52 118-64 156-20 118 44 34 50 0 0Z";
+    [[100, 240, -46, 1.05], [132, 336, 12, .82], [44, 152, -96, .7]].forEach(([x, y, angle, size]) => {
+      back.appendChild(svgEl("path", {
+        d: leaf, fill: "#8fb99f", opacity: .5,
+        transform: `translate(${x} ${y}) rotate(${angle}) scale(${size})`
+      }));
+    });
+
+    for (let column = 0; column < 4; column += 1) {
+      for (let row = 0; row < 4; row += 1) {
+        back.appendChild(svgEl("circle", {
+          cx: 2350 + column * 34, cy: 96 + row * 30, r: 5, fill: "#9dc7d0", opacity: .55
+        }));
+      }
+    }
+    parent.appendChild(back);
+  }
+
+  // 肺插圖：氣管＋左右各一葉，右葉描一次再鏡射，所以只需要一條路徑。
+  function addLungMark(parent, cx, cy, size) {
+    const group = svgEl("g", { transform: `translate(${cx} ${cy}) scale(${size})` });
+    const lobe = "M10-20C10 10 30 22 52 34 92 56 118 104 118 152c0 38-22 58-50 56C34 206 8 176 8 128Z";
+    group.appendChild(svgEl("path", {
+      d: "M0-112V-56M0-56C0-34-12-26-28-18M0-56C0-34 12-26 28-18",
+      fill: "none", stroke: "#17707f", "stroke-width": 15, "stroke-linecap": "round"
+    }));
+    [1, -1].forEach((direction) => {
+      const half = svgEl("g", { transform: `scale(${direction} 1)` });
+      half.appendChild(svgEl("path", { d: lobe, fill: "url(#lungGradient)" }));
+      half.appendChild(svgEl("path", {
+        d: "M40 40C64 74 78 116 78 158",
+        fill: "none", stroke: "#ffffff", opacity: .32, "stroke-width": 9, "stroke-linecap": "round"
+      }));
+      group.appendChild(half);
+    });
+    parent.appendChild(group);
+  }
+
+  function drawCell(group, cell, x, y, width, height) {
     const scale = height / 250;
-    const inset = 8;
-    addRect(group, x + inset, y + inset, width - inset * 2, height - inset * 2, baseFill, 18);
 
     if (cell.status === "closed") {
-      addRect(group, x + 58, y + 69 * scale, width - 116, 104 * scale, "#ece9e6", 52 * scale);
-      addText(group, cell.doctor || "休診", x + width / 2, y + 139 * scale, {
-        size: 54 * scale, weight: 850, anchor: "middle", fill: "#93452f", spacing: 4
+      const pillWidth = Math.min(width - 130, 260);
+      addRect(group, x + (width - pillWidth) / 2, y + 88 * scale, pillWidth, 76 * scale, "#fce7e4", 38 * scale);
+      addText(group, cell.doctor || "休診", x + width / 2, y + 142 * scale, {
+        size: 44 * scale, weight: 850, anchor: "middle", fill: "#c0524a", spacing: 4
       });
       return;
     }
 
     if (cell.status === "empty") {
-      addText(group, "—", x + width / 2, y + 142 * scale, {
-        size: 60 * scale, weight: 500, anchor: "middle", fill: "#a7b5b9"
+      addText(group, "—", x + width / 2, y + 140 * scale, {
+        size: 56 * scale, weight: 500, anchor: "middle", fill: "#b7c7cc"
       });
       return;
     }
@@ -458,32 +552,32 @@
 
     addText(group, cell.doctor || "未填", x + width / 2, y + layout.nameY * scale, {
       size: fitInCell(cell.doctor || "未填", layout.nameSize, width - 40, 34),
-      weight: 850, anchor: "middle", fill: "#073f58", spacing: 2
+      weight: 850, anchor: "middle", fill: INK, spacing: 2
     });
 
     if (hasSpecialty) {
       const specialtySize = fitInCell(cell.specialty, layout.specialtySize, width - 120, 20);
-      const badgeWidth = Math.min(width - 40, Math.max(128, cell.specialty.length * specialtySize * 1.26 + 48));
+      const badgeWidth = Math.min(width - 40, Math.max(128, cell.specialty.length * specialtySize * 1.26 + 44));
       addRect(group, x + (width - badgeWidth) / 2, y + layout.specialtyY * scale, badgeWidth,
-        layout.specialtyHeight * scale, "#d9ecee", (layout.specialtyHeight / 2) * scale);
+        layout.specialtyHeight * scale, "#1a8391", (layout.specialtyHeight / 2) * scale);
       addText(group, cell.specialty, x + width / 2, y + layout.specialtyTextY * scale, {
-        size: specialtySize, weight: 800, anchor: "middle", fill: "#176778", spacing: 2
+        size: specialtySize, weight: 800, anchor: "middle", fill: "#ffffff", spacing: 2
       });
     }
 
     if (cell.dates) {
       addText(group, cell.dates, x + width / 2, y + layout.datesY * scale, {
         size: fitInCell(cell.dates, layout.datesSize, width - 56, 22),
-        weight: 650, anchor: "middle", fill: "#58727b", spacing: 1
+        weight: 650, anchor: "middle", fill: "#7c8f96", spacing: 1
       });
     }
 
     if (hasAlt) {
       addRect(group, x + 28, y + layout.altY * scale, width - 56, layout.altHeight * scale,
-        "#f5dcd0", (layout.altHeight / 2) * scale);
+        "#fbe1d7", (layout.altHeight / 2) * scale);
       addText(group, cell.alt, x + width / 2, y + layout.altTextY * scale, {
         size: fitInCell(cell.alt, layout.altSize, width - 90, 18),
-        weight: 850, anchor: "middle", fill: "#a4462c"
+        weight: 800, anchor: "middle", fill: "#b04a2c"
       });
     }
   }
@@ -499,120 +593,103 @@
     poster.setAttribute("height", "2400");
     poster.setAttribute("style", "font-family:'Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif");
 
+    const activeChanges = (state.changes || []).slice(0, MAX_CHANGES);
+    const changeLayout = window.TimetableLayoutLogic.getChangeLayout(activeChanges.length);
+    const gridY = changeLayout.gridY;
+    const gridWidth = 3000;
+    const tableHeight = changeLayout.tableHeaderHeight + changeLayout.tableRowHeight * 4;
+
     const defs = svgEl("defs");
-    const shadow = svgEl("filter", { id: "cardShadow", x: "-20%", y: "-20%", width: "140%", height: "160%" });
-    shadow.append(
-      svgEl("feDropShadow", { dx: 0, dy: 18, stdDeviation: 24, "flood-color": "#063f58", "flood-opacity": .14 })
+    const lungGradient = svgEl("linearGradient", { id: "lungGradient", x1: 0, y1: 0, x2: 0, y2: 1 });
+    lungGradient.append(
+      svgEl("stop", { offset: "0%", "stop-color": "#39a0ae" }),
+      svgEl("stop", { offset: "100%", "stop-color": "#136171" })
     );
-    const headerGradient = svgEl("linearGradient", { id: "headerGradient", x1: 0, y1: 0, x2: 1, y2: 0 });
-    headerGradient.append(
-      svgEl("stop", { offset: "0%", "stop-color": "#073f58" }),
-      svgEl("stop", { offset: "100%", "stop-color": "#0b6078" })
-    );
-    const alertGradient = svgEl("linearGradient", { id: "alertGradient", x1: 0, y1: 0, x2: 1, y2: 0 });
-    alertGradient.append(
-      svgEl("stop", { offset: "0%", "stop-color": "#fff8f4" }),
-      svgEl("stop", { offset: "100%", "stop-color": "#f8ebe5" })
-    );
-    defs.append(shadow, headerGradient, alertGradient);
+    // 表格的圓角靠 clipPath 統一收邊，列底色與分隔線就不必個別處理四個角。
+    const tableClip = svgEl("clipPath", { id: "tableClip" });
+    tableClip.appendChild(svgEl("rect", { x: 150, y: gridY, width: gridWidth, height: tableHeight, rx: 18 }));
+    defs.append(lungGradient, tableClip);
     poster.appendChild(defs);
 
-    addRect(poster, 0, 0, 3300, 2400, "#e7f0f2");
-    addRect(poster, 82, 82, 3136, 2236, "rgba(255,255,255,.83)", 44, { filter: "url(#cardShadow)" });
-    addRect(poster, 82, 82, 24, 2236, "#0a5871", 12);
+    addRect(poster, 0, 0, 3300, 2400, "#ffffff");
+    addBackdrop(poster);
 
     const clinicIdentity = getClinicIdentity(state.clinic);
     const header = svgEl("g");
-    addRect(header, 150, 110, 3000, 280, "url(#headerGradient)", 44, { filter: "url(#cardShadow)" });
-    addRect(header, 150, 110, 22, 280, "#e47b57", 11);
-    // 標題列分三區：識別 220–1050、委託資訊 1400–2120、月份卡 2700–3115。
-    // 各區 maxWidth 都收斂到「到下一區之前」的實際空間，長字串只會縮小不會跨區。
-    addText(header, clinicIdentity.organization || "門診服務資訊", 220, 162, {
-      size: fitTextSize(clinicIdentity.organization, 32, 1120, 25), weight: 780, fill: "#a9d2d9", spacing: 4
+    // 標題列分三區：識別 288–1300、委託資訊 1500–2440、肺插圖與月份卡 2470–3180。
+    addText(header, clinicIdentity.organization || "門診服務資訊", 288, 172, {
+      size: fitTextSize(clinicIdentity.organization, 36, 900, 26), weight: 800, fill: TEAL, spacing: 6
     });
-    addText(header, clinicIdentity.primaryName, 220, 278, {
-      size: fitTextSize(clinicIdentity.primaryName, 100, 1120, 52), weight: 900, fill: "#ffffff", spacing: 4
-    });
-    addRect(header, 220, 332, 118, 7, "#e47b57", 3.5);
-    addText(header, "門診時刻表", 368, 356, { size: 56, weight: 850, fill: "#f6d7ca", spacing: 11 });
-
-    addRect(header, 1400, 145, 4, 210, "rgba(255,255,255,.2)", 2);
-    addText(header, "委託經營", 1462, 174, { size: 32, weight: 800, fill: "#91c2cc", spacing: 4 });
-    addText(header, state.operator, 1462, 230, {
-      size: fitTextSize(state.operator, 46, 900, 28), weight: 760, fill: "#ffffff", spacing: 1
-    });
-    addText(header, "資料更新", 1462, 294, { size: 32, weight: 800, fill: "#91c2cc", spacing: 4 });
-    addText(header, state.updateDate, 1462, 350, {
-      size: fitTextSize(state.updateDate, 44, 900, 27), weight: 760, fill: "#ffffff"
+    const nameSize = fitTextSize(clinicIdentity.primaryName, 118, 1010, 56);
+    addText(header, clinicIdentity.primaryName, 288, 338, {
+      size: nameSize, weight: 900, fill: INK, spacing: 2
     });
 
-    addRect(header, 2482, 153, 180, 180, "rgba(255,255,255,.15)", 90);
-    if (window.ORNAMENT_ASSETS?.calendar) {
-      header.appendChild(svgEl("image", {
-        href: window.ORNAMENT_ASSETS.calendar,
-        x: 2497, y: 166, width: 150, height: 150,
-        preserveAspectRatio: "xMidYMid meet"
-      }));
-    }
-    addRect(header, 2700, 132, 415, 236, "#fff8ef", 34);
-    addRect(header, 2700, 132, 415, 12, "#e47b57", 6);
-    addText(header, `民國 ${state.year} 年`, 2907, 187, {
-      size: 34, weight: 800, anchor: "middle", fill: "#55727a", spacing: 3
+    // 「門診時刻表」與兩側橘線是一組 lockup，對齊所名的水平中心；
+    // 中線錨點補 +10 抵銷 letter-spacing 記在最後一字之後造成的左偏。
+    const subtitleWidth = textUnits("門診時刻表") * 50 + 4 * 20;
+    const lockupCenter = 288 + textUnits(clinicIdentity.primaryName) * nameSize / 2;
+    addText(header, "門診時刻表", lockupCenter + 10, 424, {
+      size: 50, weight: 850, anchor: "middle", fill: INK, spacing: 20
     });
-    // 「08」與「月」當成一組 lockup 對卡片中心 2907 置中，兩者共用基線 331。
-    addText(header, String(state.month).padStart(2, "0"), 2867, 331, {
-      size: 142, weight: 900, anchor: "middle", fill: "#073f58", spacing: -3
+    addRect(header, lockupCenter - subtitleWidth / 2 - 132, 400, 104, 7, ORANGE, 3.5);
+    addRect(header, lockupCenter + subtitleWidth / 2 + 28, 400, 104, 7, ORANGE, 3.5);
+
+    addRect(header, 1400, 130, 4, 308, "#d6e6ea", 2);
+    addIcon(header, "briefcase", 1500, 156, 46, TEAL);
+    addText(header, "委託經營", 1560, 172, { size: 34, weight: 800, fill: TEAL, spacing: 4 });
+    addText(header, state.operator, 1560, 246, {
+      size: fitTextSize(state.operator, 48, 860, 28), weight: 800, fill: INK, spacing: 1
     });
-    addText(header, "月", 2980, 331, { size: 52, weight: 900, fill: "#c65f3e" });
+    addIcon(header, "calendar", 1500, 318, 46, TEAL);
+    addText(header, "資料更新", 1560, 334, { size: 34, weight: 800, fill: TEAL, spacing: 4 });
+    addText(header, state.updateDate, 1560, 408, {
+      size: fitTextSize(state.updateDate, 46, 860, 27), weight: 800, fill: INK
+    });
+
+    addLungMark(header, 2600, 202, 1.05);
+
+    addRect(header, 2750, 90, 430, 350, "#ffffff", 26, { stroke: INK, "stroke-width": 5 });
+    addText(header, `民國 ${state.year} 年`, 2965, 192, {
+      size: 40, weight: 800, anchor: "middle", fill: INK, spacing: 3
+    });
+    addText(header, String(state.month).padStart(2, "0"), 2930, 392, {
+      size: 168, weight: 900, anchor: "middle", fill: INK, spacing: -4
+    });
+    header.appendChild(svgEl("circle", { cx: 3108, cy: 354, r: 40, fill: ORANGE }));
+    addText(header, "月", 3108, 370, { size: 40, weight: 800, anchor: "middle", fill: "#ffffff" });
     poster.appendChild(header);
 
-    const activeChanges = (state.changes || []).slice(0, MAX_CHANGES);
-    const changeLayout = window.TimetableLayoutLogic.getChangeLayout(activeChanges.length);
-    const stackedChanges = changeLayout.stacked;
-    const alertY = 430;
+    const alertY = changeLayout.alertY;
     const alertHeight = changeLayout.alertHeight;
     const alert = svgEl("g");
-    addRect(alert, 150, alertY, 3000, alertHeight, "url(#alertGradient)", 36, {
-      stroke: "#efd5c9", "stroke-width": 3
+    addRect(alert, 150, alertY, 3000, alertHeight, "#ffffff", 22, { stroke: HAIRLINE, "stroke-width": 3 });
+    addIconBadge(alert, "megaphone", 232, alertY + 64, 42);
+    addText(alert, "門診異動", 306, alertY + 84, { size: 52, weight: 900, fill: INK, spacing: 4 });
+    addRect(alert, 590, alertY + 36, 196, 58, ORANGE, 29);
+    addText(alert, activeChanges.length ? `共 ${activeChanges.length} 筆` : "本月 0 筆", 688, alertY + 77, {
+      size: 31, weight: 850, anchor: "middle", fill: "#ffffff", spacing: 2
     });
-    addRect(alert, 150, alertY, 3000, 10, "#d36b4b", 5);
-    addRect(alert, 182, alertY + 24, 68, 68, "#f3d8cc", 20);
-    if (window.ORNAMENT_ASSETS?.announcement) {
-      alert.appendChild(svgEl("image", {
-        href: window.ORNAMENT_ASSETS.announcement,
-        x: 191, y: alertY + 33, width: 50, height: 50,
-        preserveAspectRatio: "xMidYMid meet"
-      }));
-    }
-    addText(alert, "門診異動", 280, alertY + 76, {
-      size: 52, weight: 900, fill: "#873f2c", spacing: 4
+    addText(alert, activeChanges.length ? "其餘門診依固定時刻表正常看診" : "本月門診依固定時刻表正常看診", 3090, alertY + 78, {
+      size: 33, weight: 700, anchor: "end", fill: MUTED, spacing: 1
     });
-    addRect(alert, 578, alertY + 30, 190, 56, "#f2d8cc", 28);
-    addText(alert, activeChanges.length ? `共 ${activeChanges.length} 筆` : "本月 0 筆", 673, alertY + 70, {
-      size: 29, weight: 850, anchor: "middle", fill: "#984a34", spacing: 2
-    });
-    // 右緣對齊下方分隔線與異動卡的 3120，原本 3090 會看起來莫名縮排。
-    addText(alert, activeChanges.length ? "其餘門診依固定時刻表正常看診" : "本月門診依固定時刻表正常看診", 3120, alertY + 72, {
-      size: 33, weight: 720, anchor: "end", fill: "#79665e", spacing: 1
-    });
-    addRect(alert, 180, alertY + 108, 2940, 3, "#ead7ce", 1.5);
 
     if (!activeChanges.length) {
-      addText(alert, "本月無門診異動", 1650, alertY + 215, {
-        size: 54, weight: 900, anchor: "middle", fill: "#8e3f29", spacing: 3
+      addText(alert, "本月無門診異動", 1650, alertY + 220, {
+        size: 54, weight: 900, anchor: "middle", fill: INK, spacing: 3
       });
-      addText(alert, "請依下方固定門診表正常看診", 1650, alertY + 272, {
-        size: 34, weight: 720, anchor: "middle", fill: "#75635b"
+      addText(alert, "請依下方固定門診表正常看診", 1650, alertY + 278, {
+        size: 34, weight: 700, anchor: "middle", fill: MUTED
       });
     } else {
       const rows = changeLayout.rows;
       const columns = changeLayout.columns;
-      const areaX = 180;
-      const areaWidth = 2940;
+      const areaX = 190;
+      const areaWidth = 2920;
       const gapX = 24;
-      const gapY = 22;
-      const areaY = alertY + 126;
-      const areaHeight = alertHeight - 151;
+      const gapY = 20;
+      const areaY = alertY + 118;
+      const areaHeight = alertHeight - 140;
       const cardWidth = (areaWidth - gapX * (columns - 1)) / columns;
       const cardHeight = (areaHeight - gapY * (rows - 1)) / rows;
       activeChanges.forEach((change, index) => {
@@ -623,19 +700,18 @@
         const x = areaX + rowOffset + column * (cardWidth + gapX);
         const y = areaY + row * (cardHeight + gapY);
         const incomplete = !change.date && !change.originalDoctor && !change.substituteDoctor;
-        const accent = incomplete ? "#718c95" : change.kind === "closed" ? "#a43e31" : change.kind === "notice" ? "#b87928" : "#cf6847";
-        addRect(alert, x, y, cardWidth, cardHeight, "rgba(255,255,255,.97)", 20, {
-          stroke: incomplete ? "#a9bbc0" : "#ead8cf", "stroke-width": 3,
+        const accent = incomplete ? "#8ba3ab" : change.kind === "closed" ? "#c0524a" : change.kind === "notice" ? "#d08a2a" : ORANGE;
+        addRect(alert, x, y, cardWidth, cardHeight, incomplete ? "#ffffff" : "#f4f8f9", 16, {
+          stroke: incomplete ? "#c0d2d8" : undefined, "stroke-width": incomplete ? 3 : undefined,
           "stroke-dasharray": incomplete ? "14 10" : undefined
         });
-        addRect(alert, x, y, 8, cardHeight, accent, 4);
-        addRect(alert, x + 26, y + 24, 200, 50, accent, 25);
-        addText(alert, incomplete ? "待填資料" : formatChangeDate(change.date), x + 126, y + 60, {
+        addRect(alert, x + 26, y + 22, 190, 54, accent, 27);
+        addText(alert, incomplete ? "待填資料" : formatChangeDate(change.date), x + 121, y + 59, {
           size: 29, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
         });
         const sessionRoom = `${change.session || "時段"}・${change.room || "診室"}`;
-        addText(alert, incomplete ? "新增異動" : sessionRoom, x + cardWidth - 28, y + 61, {
-          size: fitTextSize(sessionRoom, 31, cardWidth - 275, 24), weight: 780, anchor: "end", fill: incomplete ? "#718c95" : "#79655c"
+        addText(alert, incomplete ? "新增異動" : sessionRoom, x + cardWidth - 26, y + 60, {
+          size: fitTextSize(sessionRoom, 31, cardWidth - 265, 24), weight: 720, anchor: "end", fill: MUTED
         });
 
         let detail;
@@ -648,114 +724,129 @@
         } else {
           detail = `${change.originalDoctor || "原醫師"} → ${change.substituteDoctor || "代診醫師"}代診`;
         }
-        addText(alert, detail, x + 28, y + cardHeight - 30, {
-          size: fitTextSize(detail, 42, cardWidth - 56, 28), weight: 850, fill: incomplete ? "#647b83" : "#403a37"
+        addText(alert, detail, x + 26, y + cardHeight - 30, {
+          size: fitTextSize(detail, 44, cardWidth - 52, 28), weight: 850, fill: incomplete ? MUTED : INK
         });
       });
     }
     poster.appendChild(alert);
 
-    const grid = svgEl("g");
     const gridX = 150;
-    const gridY = changeLayout.gridY;
-    const labelWidth = 390;
-    const dayWidth = 435;
+    const labelWidth = 372;
+    const dayWidth = (gridWidth - labelWidth) / 6;
     const headerHeight = changeLayout.tableHeaderHeight;
     const rowHeight = changeLayout.tableRowHeight;
+    const grid = svgEl("g", { "clip-path": "url(#tableClip)" });
 
-    addRect(grid, gridX, gridY, 3000, headerHeight + rowHeight * 4, "#ffffff", 30, { filter: "url(#cardShadow)" });
-    addRect(grid, gridX, gridY, 3000, headerHeight, "#073f58", 30);
-    addRect(grid, gridX, gridY + headerHeight / 2, 3000, headerHeight / 2, "#073f58");
-    addText(grid, "時段／診室", gridX + labelWidth / 2, gridY + headerHeight * .64, { size: 43, weight: 850, anchor: "middle", fill: "#d5edf0", spacing: 2 });
+    addRect(grid, gridX, gridY, gridWidth, tableHeight, "#ffffff");
+    addRect(grid, gridX, gridY, gridWidth, headerHeight, INK);
+    addText(grid, "時段／診室", gridX + labelWidth / 2, gridY + headerHeight * .66, {
+      size: 42, weight: 850, anchor: "middle", fill: "#c9e2e8", spacing: 2
+    });
     days.forEach((day, index) => {
       const x = gridX + labelWidth + dayWidth * index;
-      if (index > 0) addRect(grid, x, gridY + 30, 3, headerHeight - 60, "rgba(255,255,255,.2)");
-      addText(grid, day, x + dayWidth / 2, gridY + headerHeight * .64, { size: 49, weight: 850, anchor: "middle", fill: "#ffffff", spacing: 2 });
+      addText(grid, day, x + dayWidth / 2, gridY + headerHeight * .66, {
+        size: 47, weight: 850, anchor: "middle", fill: "#ffffff", spacing: 2
+      });
     });
+    // 表頭欄位分隔線只在表頭裡淡淡帶過，表身則是整條髮絲線。
+    for (let index = 0; index <= 6; index += 1) {
+      const x = gridX + labelWidth + dayWidth * index;
+      if (index < 6) addRect(grid, x, gridY + 26, 3, headerHeight - 52, "rgba(255,255,255,.22)");
+      addRect(grid, index === 6 ? gridX + labelWidth : x, gridY + headerHeight, 3, tableHeight - headerHeight, HAIRLINE);
+    }
 
     state.rows.forEach((row, rowIndex) => {
       const y = gridY + headerHeight + rowHeight * rowIndex;
       const afternoon = rowIndex >= 2;
-      const labelFill = afternoon ? "#deeee7" : "#dcecf1";
-      addRect(grid, gridX + 8, y + 8, labelWidth - 16, rowHeight - 16, labelFill, 18);
+      addRect(grid, gridX, y, labelWidth, rowHeight, afternoon ? "#e8f3ec" : "#e9f3f7");
+      if (rowIndex > 0) addRect(grid, gridX, y, gridWidth, 3, HAIRLINE);
       const rowScale = rowHeight / 250;
-      addText(grid, row.session, gridX + 78, y + 75 * rowScale, { size: 37 * rowScale, weight: 850, fill: afternoon ? "#2b6d5e" : "#166078", spacing: 4 });
-      addText(grid, row.room, gridX + 74, y + 163 * rowScale, { size: 72 * rowScale, weight: 900, fill: "#073f58", spacing: 2 });
+      addText(grid, row.session, gridX + labelWidth / 2, y + 84 * rowScale, {
+        size: 38 * rowScale, weight: 800, anchor: "middle", fill: afternoon ? "#2f7d68" : "#2a7488", spacing: 5
+      });
+      addText(grid, row.room, gridX + labelWidth / 2, y + 168 * rowScale, {
+        size: 66 * rowScale, weight: 900, anchor: "middle", fill: INK, spacing: 2
+      });
       row.cells.forEach((cell, dayIndex) => {
-        drawCell(grid, cell, gridX + labelWidth + dayWidth * dayIndex, y, dayWidth, rowHeight, rowIndex);
+        drawCell(grid, cell, gridX + labelWidth + dayWidth * dayIndex, y, dayWidth, rowHeight);
       });
     });
     poster.appendChild(grid);
+    addRect(poster, gridX, gridY, gridWidth, tableHeight, "none", 18, { stroke: HAIRLINE, "stroke-width": 3 });
 
     const footer = svgEl("g");
-    const footerY = 1870;
-    const gap = 26;
-    const widths = [810, 810, 1328];
-    let fx = 150;
-    widths.forEach((width) => {
-      addRect(footer, fx, footerY, width, 340, "rgba(255,255,255,.94)", 28, { stroke: "#d3e2e5", "stroke-width": 3 });
-      fx += width + gap;
+    const footerY = 1900;
+    const footerHeight = 340;
+    // 五張卡：門診時間、現場掛號、聯絡資訊、兩張 QR，卡距一律 30，右緣收在 3150。
+    const cards = [
+      { x: 150, width: 720 },
+      { x: 900, width: 720 },
+      { x: 1650, width: 790 },
+      { x: 2470, width: 320 },
+      { x: 2820, width: 330 }
+    ];
+    cards.forEach(({ x, width }) => {
+      addRect(footer, x, footerY, width, footerHeight, "#ffffff", 24, { stroke: HAIRLINE, "stroke-width": 3 });
     });
 
-    // 三張卡共用同一套規格：文字內縮 55、標題 34、內容整組對卡片垂直置中。
-    const cardTextInset = 55;
-    const hoursWidth = 700;
-    addText(footer, "門診時間", 205, footerY + 99, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
-    addText(footer, state.morningClinic, 205, footerY + 185, {
-      size: fitTextSize(state.morningClinic, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
-    });
-    addText(footer, state.afternoonClinic, 205, footerY + 268, {
-      size: fitTextSize(state.afternoonClinic, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
+    // 三張資訊卡共用一套規格：左上角青綠圓形圖示、標題後接虛線引導線、內容左對齊 textX。
+    function footerHeading(card, name, title) {
+      const textX = card.x + 210;
+      addIconBadge(footer, name, card.x + 111, footerY + 96, 44);
+      addText(footer, title, textX, footerY + 92, { size: 34, weight: 900, fill: TEAL, spacing: 4 });
+      footer.appendChild(svgEl("line", {
+        x1: textX + textUnits(title) * 34 + 3 * 4 + 24, y1: footerY + 80,
+        x2: card.x + card.width - 45, y2: footerY + 80,
+        stroke: "#b9ccd2", "stroke-width": 4, "stroke-linecap": "round", "stroke-dasharray": "2 14"
+      }));
+      return { textX, maxWidth: card.x + card.width - 45 - textX };
+    }
+
+    const hours = footerHeading(cards[0], "clock", "門診時間");
+    [state.morningClinic, state.afternoonClinic].forEach((line, index) => {
+      addText(footer, line, hours.textX, footerY + 185 + index * 78, {
+        size: fitTextSize(line, 46, hours.maxWidth, 28), weight: 850, fill: INK
+      });
     });
 
-    const regX = 150 + widths[0] + gap;
-    const morningReg = `上午 ${state.morningRegistration}`;
-    const afternoonReg = `下午 ${state.afternoonRegistration}`;
-    addText(footer, "現場掛號", regX + cardTextInset, footerY + 99, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
-    addText(footer, morningReg, regX + cardTextInset, footerY + 185, {
-      size: fitTextSize(morningReg, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
-    });
-    addText(footer, afternoonReg, regX + cardTextInset, footerY + 268, {
-      size: fitTextSize(afternoonReg, 45, hoursWidth, 28), weight: 850, fill: "#073f58"
+    const registration = footerHeading(cards[1], "pin", "現場掛號");
+    [`上午 ${state.morningRegistration}`, `下午 ${state.afternoonRegistration}`].forEach((line, index) => {
+      addText(footer, line, registration.textX, footerY + 185 + index * 78, {
+        size: fitTextSize(line, 44, registration.maxWidth, 28), weight: 850, fill: INK
+      });
     });
 
-    const contactX = regX + widths[1] + gap;
-    // 文字欄可用寬度＝到 QR 組左緣前留 40 的溝槽，地址變長只會縮小不會壓到 QR。
-    const contactWidth = 606;
-    addText(footer, "聯絡資訊", contactX + cardTextInset, footerY + 85, { size: 34, weight: 900, fill: "#2a7888", spacing: 4 });
-    addText(footer, state.primaryPhone, contactX + cardTextInset, footerY + 146, {
-      size: fitTextSize(state.primaryPhone, 47, contactWidth, 30), weight: 900, fill: "#073f58"
+    const contact = footerHeading(cards[2], "phone", "聯絡資訊");
+    addText(footer, state.primaryPhone, contact.textX, footerY + 156, {
+      size: fitTextSize(state.primaryPhone, 52, contact.maxWidth, 30), weight: 900, fill: INK
     });
-    addText(footer, state.otherPhones, contactX + cardTextInset, footerY + 189, {
-      size: fitTextSize(state.otherPhones, 27, contactWidth, 20), weight: 650, fill: "#60777f"
+    addText(footer, state.otherPhones, contact.textX, footerY + 208, {
+      size: fitTextSize(state.otherPhones, 30, contact.maxWidth, 20), weight: 650, fill: MUTED
     });
-    addText(footer, state.address, contactX + cardTextInset, footerY + 243, {
-      size: fitTextSize(state.address, 29, contactWidth, 20), weight: 720, fill: "#3f5b64"
+    addText(footer, state.address, contact.textX, footerY + 258, {
+      size: fitTextSize(state.address, 32, contact.maxWidth, 20), weight: 720, fill: "#3f5b64"
     });
-    addText(footer, state.website, contactX + cardTextInset, footerY + 285, {
-      size: fitTextSize(state.website, 27, contactWidth, 20), weight: 650, fill: "#71868d", spacing: 1
+    addText(footer, state.website, contact.textX, footerY + 304, {
+      size: fitTextSize(state.website, 29, contact.maxWidth, 20), weight: 650, fill: MUTED, spacing: 1
     });
 
     const qrSize = 250;
-    const qrY = footerY + 25;
-    // 兩張 QR 當一組靠右，框間留 40、右緣同樣內縮 55（原本兩框只差 4，看起來是黏在一起的）。
-    const mapQrX = contactX + 709;
-    const facebookQrX = contactX + 1015;
-    if (window.QR_ASSETS?.googleMaps) {
-      addRect(footer, mapQrX - 8, qrY - 8, qrSize + 16, qrSize + 16, "#ffffff", 18, { stroke: "#d9e4e6", "stroke-width": 2 });
-      footer.appendChild(svgEl("image", { href: window.QR_ASSETS.googleMaps, x: mapQrX, y: qrY, width: qrSize, height: qrSize }));
-      addText(footer, "Google 地標", mapQrX + qrSize / 2, footerY + 313, { size: 27, weight: 850, anchor: "middle", fill: "#176778" });
-    }
-    if (window.QR_ASSETS?.facebook) {
-      addRect(footer, facebookQrX - 8, qrY - 8, qrSize + 16, qrSize + 16, "#ffffff", 18, { stroke: "#d9e4e6", "stroke-width": 2 });
-      footer.appendChild(svgEl("image", { href: window.QR_ASSETS.facebook, x: facebookQrX, y: qrY, width: qrSize, height: qrSize }));
-      addText(footer, "Facebook", facebookQrX + qrSize / 2, footerY + 313, { size: 27, weight: 850, anchor: "middle", fill: "#176778" });
-    }
+    [
+      { card: cards[3], href: window.QR_ASSETS?.googleMaps, label: "Google 地標" },
+      { card: cards[4], href: window.QR_ASSETS?.facebook, label: "Facebook" }
+    ].forEach(({ card, href, label }) => {
+      if (!href) return;
+      const center = card.x + card.width / 2;
+      footer.appendChild(svgEl("image", { href, x: center - qrSize / 2, y: footerY + 22, width: qrSize, height: qrSize }));
+      addText(footer, label, center, footerY + 312, { size: 29, weight: 850, anchor: "middle", fill: TEAL });
+    });
     poster.appendChild(footer);
 
-    // 基線 2275 讓這行在頁尾卡（收在 2210）與白底卡下緣（2318）之間上下各留 33。
-    addText(poster, state.closureNote, 150, 2275, {
-      size: fitTextSize(state.closureNote, 35, 3000, 24), weight: 750, fill: "#566e76", spacing: 1
+    // 滿版底條收尾，休診說明改成反白字，海報下緣就不會是浮著的一行小字。
+    addRect(poster, 0, 2300, 3300, 100, INK);
+    addText(poster, state.closureNote, 170, 2364, {
+      size: fitTextSize(state.closureNote, 36, 2960, 24), weight: 700, fill: "#c9dde4", spacing: 1
     });
   }
 
