@@ -402,7 +402,11 @@
       return total + (/^[\x00-\x7F]$/.test(character) ? 0.58 : 1);
     }, 0);
     if (!units) return preferredSize;
-    return Math.max(minimumSize, Math.min(preferredSize, Math.floor((maxWidth / units) * .94)));
+    const fitted = Math.floor((maxWidth / units) * .94);
+    // maxWidth 是硬約束、minimumSize 只是可讀性偏好：字太多時寧可縮到下限以下，
+    // 也不能溢出去蓋到隔壁元素（原本 Math.max(minimumSize, ...) 會讓長字串撐破 maxWidth）。
+    if (fitted < minimumSize) return Math.max(fitted, 1);
+    return Math.min(preferredSize, fitted);
   }
 
   function getClinicIdentity(value) {
@@ -521,26 +525,28 @@
     const header = svgEl("g");
     addRect(header, 150, 110, 3000, 280, "url(#headerGradient)", 44, { filter: "url(#cardShadow)" });
     addRect(header, 150, 110, 22, 280, "#e47b57", 11);
-    addText(header, clinicIdentity.organization || "門診服務資訊", 220, 164, {
-      size: fitTextSize(clinicIdentity.organization, 30, 1480, 25), weight: 780, fill: "#a9d2d9", spacing: 4
+    // 標題列分三區：識別 220–1050、委託資訊 1400–2120、月份卡 2700–3115。
+    // 各區 maxWidth 都收斂到「到下一區之前」的實際空間，長字串只會縮小不會跨區。
+    addText(header, clinicIdentity.organization || "門診服務資訊", 220, 162, {
+      size: fitTextSize(clinicIdentity.organization, 32, 1120, 25), weight: 780, fill: "#a9d2d9", spacing: 4
     });
-    addText(header, clinicIdentity.primaryName, 215, 276, {
-      size: fitTextSize(clinicIdentity.primaryName, 84, 1510, 52), weight: 900, fill: "#ffffff", spacing: 4
+    addText(header, clinicIdentity.primaryName, 218, 278, {
+      size: fitTextSize(clinicIdentity.primaryName, 100, 1120, 52), weight: 900, fill: "#ffffff", spacing: 4
     });
-    addRect(header, 220, 303, 118, 7, "#e47b57", 3.5);
-    addText(header, "門診時刻表", 365, 338, { size: 56, weight: 850, fill: "#f6d7ca", spacing: 11 });
+    addRect(header, 220, 332, 118, 7, "#e47b57", 3.5);
+    addText(header, "門診時刻表", 368, 356, { size: 56, weight: 850, fill: "#f6d7ca", spacing: 11 });
 
-    addRect(header, 1848, 145, 4, 210, "rgba(255,255,255,.2)", 2);
-    addText(header, "委託經營", 1910, 178, { size: 25, weight: 800, fill: "#91c2cc", spacing: 4 });
-    addText(header, state.operator, 1910, 226, {
-      size: fitTextSize(state.operator, 36, 610, 28), weight: 760, fill: "#ffffff", spacing: 1
+    addRect(header, 1400, 145, 4, 210, "rgba(255,255,255,.2)", 2);
+    addText(header, "委託經營", 1462, 174, { size: 32, weight: 800, fill: "#91c2cc", spacing: 4 });
+    addText(header, state.operator, 1462, 230, {
+      size: fitTextSize(state.operator, 46, 900, 28), weight: 760, fill: "#ffffff", spacing: 1
     });
-    addText(header, "資料更新", 1910, 288, { size: 25, weight: 800, fill: "#91c2cc", spacing: 4 });
-    addText(header, state.updateDate, 1910, 337, {
-      size: fitTextSize(state.updateDate, 35, 430, 27), weight: 760, fill: "#ffffff"
+    addText(header, "資料更新", 1462, 294, { size: 32, weight: 800, fill: "#91c2cc", spacing: 4 });
+    addText(header, state.updateDate, 1462, 350, {
+      size: fitTextSize(state.updateDate, 44, 900, 27), weight: 760, fill: "#ffffff"
     });
 
-    addRect(header, 2482, 153, 180, 180, "rgba(255,255,255,.09)", 90);
+    addRect(header, 2482, 153, 180, 180, "rgba(255,255,255,.15)", 90);
     if (window.ORNAMENT_ASSETS?.calendar) {
       header.appendChild(svgEl("image", {
         href: window.ORNAMENT_ASSETS.calendar,
@@ -550,13 +556,14 @@
     }
     addRect(header, 2700, 132, 415, 236, "#fff8ef", 34);
     addRect(header, 2700, 132, 415, 12, "#e47b57", 6);
-    addText(header, `民國 ${state.year} 年`, 2907, 185, {
-      size: 31, weight: 800, anchor: "middle", fill: "#55727a", spacing: 3
+    addText(header, `民國 ${state.year} 年`, 2907, 187, {
+      size: 34, weight: 800, anchor: "middle", fill: "#55727a", spacing: 3
     });
-    addText(header, String(state.month).padStart(2, "0"), 2878, 326, {
+    // 「08」與「月」當成一組 lockup 對卡片中心 2907 置中，兩者共用基線 331。
+    addText(header, String(state.month).padStart(2, "0"), 2867, 331, {
       size: 142, weight: 900, anchor: "middle", fill: "#073f58", spacing: -3
     });
-    addText(header, "月", 3032, 316, { size: 52, weight: 900, fill: "#c65f3e" });
+    addText(header, "月", 2980, 331, { size: 52, weight: 900, fill: "#c65f3e" });
     poster.appendChild(header);
 
     const activeChanges = (state.changes || []).slice(0, MAX_CHANGES);
