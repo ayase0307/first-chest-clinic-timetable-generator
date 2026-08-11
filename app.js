@@ -389,6 +389,8 @@
   const ORANGE = "#e8763a";
   const HAIRLINE = "#e2ecef";
   const MUTED = "#7d8f95";
+  // 右上角月份卡，底邊要收在異動區（505）之上。
+  const CARD = { x: 2716, y: 78, width: 470, height: 388, radius: 26 };
 
   function addText(parent, text, x, y, options = {}) {
     const node = svgEl("text", {
@@ -481,8 +483,9 @@
     };
     blob(150, 236, 340, 250, "#daeef1", .75, -18);
     blob(60, 470, 210, 150, "#e7f4ef", .85, 12);
-    blob(3200, 250, 400, 330, "#dbeef2", .55, 24);
-    blob(2980, 50, 260, 200, "#e9f5f7", .8, -10);
+    // 肺插圖的白色氣管要有淡色色塊襯著才看得出來，這球刻意壓在插圖後面。
+    blob(2820, 236, 470, 300, "#d7eaee", .7, 14);
+    blob(3120, 60, 300, 210, "#e9f5f7", .8, -10);
     blob(20, 1900, 330, 400, "#e4f2f4", .8, 0);
     blob(3290, 1520, 250, 320, "#eaf4f6", .7, 0);
 
@@ -504,24 +507,13 @@
     parent.appendChild(back);
   }
 
-  // 肺插圖：氣管＋左右各一葉，右葉描一次再鏡射，所以只需要一條路徑。
-  function addLungMark(parent, cx, cy, size) {
-    const group = svgEl("g", { transform: `translate(${cx} ${cy}) scale(${size})` });
-    const lobe = "M10-20C10 10 30 22 52 34 92 56 118 104 118 152c0 38-22 58-50 56C34 206 8 176 8 128Z";
-    group.appendChild(svgEl("path", {
-      d: "M0-112V-56M0-56C0-34-12-26-28-18M0-56C0-34 12-26 28-18",
-      fill: "none", stroke: "#17707f", "stroke-width": 15, "stroke-linecap": "round"
+  // 肺插圖用參考稿裁出來的點陣圖（tools/extract_lung.py），內嵌成 data URI，
+  // 匯出 PNG 時走的是 SVG blob，外部圖檔會載不到。
+  function addLungMark(parent, x, y, width) {
+    if (!window.LUNG_ASSET) return;
+    parent.appendChild(svgEl("image", {
+      href: window.LUNG_ASSET, x, y, width, height: width * 448 / 484
     }));
-    [1, -1].forEach((direction) => {
-      const half = svgEl("g", { transform: `scale(${direction} 1)` });
-      half.appendChild(svgEl("path", { d: lobe, fill: "url(#lungGradient)" }));
-      half.appendChild(svgEl("path", {
-        d: "M40 40C64 74 78 116 78 158",
-        fill: "none", stroke: "#ffffff", opacity: .32, "stroke-width": 9, "stroke-linecap": "round"
-      }));
-      group.appendChild(half);
-    });
-    parent.appendChild(group);
   }
 
   function drawCell(group, cell, x, y, width, height) {
@@ -600,15 +592,15 @@
     const tableHeight = changeLayout.tableHeaderHeight + changeLayout.tableRowHeight * 4;
 
     const defs = svgEl("defs");
-    const lungGradient = svgEl("linearGradient", { id: "lungGradient", x1: 0, y1: 0, x2: 0, y2: 1 });
-    lungGradient.append(
-      svgEl("stop", { offset: "0%", "stop-color": "#39a0ae" }),
-      svgEl("stop", { offset: "100%", "stop-color": "#136171" })
-    );
     // 表格的圓角靠 clipPath 統一收邊，列底色與分隔線就不必個別處理四個角。
     const tableClip = svgEl("clipPath", { id: "tableClip" });
     tableClip.appendChild(svgEl("rect", { x: 150, y: gridY, width: gridWidth, height: tableHeight, rx: 18 }));
-    defs.append(lungGradient, tableClip);
+    // 月份卡的深色頁首靠同一招收邊，才會只圓上面兩角。
+    const cardClip = svgEl("clipPath", { id: "cardClip" });
+    cardClip.appendChild(svgEl("rect", {
+      x: CARD.x, y: CARD.y, width: CARD.width, height: CARD.height, rx: CARD.radius
+    }));
+    defs.append(tableClip, cardClip);
     poster.appendChild(defs);
 
     addRect(poster, 0, 0, 3300, 2400, "#ffffff");
@@ -647,17 +639,24 @@
       size: fitTextSize(state.updateDate, 46, 860, 27), weight: 800, fill: INK
     });
 
-    addLungMark(header, 2600, 202, 1.05);
+    addLungMark(header, 2390, 138, 380);
 
-    addRect(header, 2750, 90, 430, 350, "#ffffff", 26, { stroke: INK, "stroke-width": 5 });
-    addText(header, `民國 ${state.year} 年`, 2965, 192, {
-      size: 40, weight: 800, anchor: "middle", fill: INK, spacing: 3
+    // 月份卡：白底＋深青頁首（像撕頁日曆），數字左偏留出右下角的橘色「月」章。
+    addRect(header, CARD.x, CARD.y, CARD.width, CARD.height, "#ffffff", CARD.radius,
+      { stroke: "#b9d3d9", "stroke-width": 4 });
+    const cardHead = svgEl("g", { "clip-path": "url(#cardClip)" });
+    addRect(cardHead, CARD.x, CARD.y, CARD.width, 34, TEAL);
+    header.appendChild(cardHead);
+    addText(header, `民國 ${state.year} 年`, CARD.x + CARD.width / 2, CARD.y + 122, {
+      size: 44, weight: 800, anchor: "middle", fill: TEAL, spacing: 3
     });
-    addText(header, String(state.month).padStart(2, "0"), 2930, 392, {
-      size: 168, weight: 900, anchor: "middle", fill: INK, spacing: -4
+    addText(header, String(state.month).padStart(2, "0"), CARD.x + CARD.width / 2 - 32, CARD.y + 300, {
+      size: 176, weight: 900, anchor: "middle", fill: INK, spacing: -4
     });
-    header.appendChild(svgEl("circle", { cx: 3108, cy: 354, r: 40, fill: ORANGE }));
-    addText(header, "月", 3108, 370, { size: 40, weight: 800, anchor: "middle", fill: "#ffffff" });
+    header.appendChild(svgEl("circle", { cx: CARD.x + CARD.width - 78, cy: CARD.y + 286, r: 46, fill: ORANGE }));
+    addText(header, "月", CARD.x + CARD.width - 78, CARD.y + 303, {
+      size: 44, weight: 800, anchor: "middle", fill: "#ffffff"
+    });
     poster.appendChild(header);
 
     const alertY = changeLayout.alertY;
