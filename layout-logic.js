@@ -14,8 +14,8 @@
     // 7～8 筆改排 4 欄，異動卡高度不變，門診表就不必再被壓縮。
     const columns = count > 6 ? 4 : count === 4 ? 2 : count > 0 ? 3 : 1;
 
-    // 標題列收在 456，異動卡固定從 505 起；不論異動幾筆，門診表都收在 1848，
-    // 下方才留得出頁尾卡（1900–2240）與滿版底條（2300–2400）。
+    // 標題列收在 456，異動卡固定從 505 起；不論異動幾筆，門診表都收在 1950，
+    // 下方才留得出頁尾卡（1990–2260）與滿版底條（2300–2400）。
     return {
       count,
       stacked,
@@ -24,8 +24,8 @@
       alertY: 505,
       alertHeight: stacked ? 480 : 330,
       gridY: stacked ? 1025 : 875,
-      tableHeaderHeight: stacked ? 111 : 113,
-      tableRowHeight: stacked ? 178 : 215
+      tableHeaderHeight: stacked ? 113 : 115,
+      tableRowHeight: stacked ? 203 : 240
     };
   }
 

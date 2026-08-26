@@ -69,7 +69,6 @@
     address: "臺北市大同區民權西路104號2樓",
     primaryPhone: "(02) 2557-7221",
     otherPhones: "2557-5507・2557-2392",
-    website: "www.tb.org.tw",
     closureNote: "週六下午、週日及例假日停診｜颱風天災依臺北市政府停班公告停診"
   };
 
@@ -380,7 +379,6 @@
       field("地址", "address", { full: true }),
       field("主要電話", "primaryPhone"),
       field("其他電話", "otherPhones"),
-      field("網站", "website", { full: true }),
       field("停診說明", "closureNote", { type: "textarea", full: true })
     );
   }
@@ -811,8 +809,10 @@
     addRect(poster, gridX, gridY, gridWidth, tableHeight, "none", 18, { stroke: HAIRLINE, "stroke-width": 3 });
 
     const footer = svgEl("g");
-    const footerY = 1900;
-    const footerHeight = 340;
+    // 頁尾卡收在 1990–2260，跟滿版底條留 40。高度是被 QR 卡撐出來的，
+    // 所以縮高度得同時縮 QR 與拉近它的標籤，剩下的空間全部給門診表。
+    const footerY = 1990;
+    const footerHeight = 270;
     // 五張卡：門診時間、現場掛號、聯絡資訊、兩張 QR，卡距一律 30，右緣收在 3150。
     const cards = [
       { x: 150, width: 720 },
@@ -828,11 +828,11 @@
     // 三張資訊卡共用一套規格：左上角青綠圓形圖示、標題後接虛線引導線、內容左對齊 textX。
     function footerHeading(card, name, title) {
       const textX = card.x + 210;
-      addIconBadge(footer, name, card.x + 111, footerY + 96, 44);
-      addText(footer, title, textX, footerY + 92, { size: 34, weight: 900, fill: TEAL, spacing: 4 });
+      addIconBadge(footer, name, card.x + 111, footerY + 76, 44);
+      addText(footer, title, textX, footerY + 72, { size: 34, weight: 900, fill: TEAL, spacing: 4 });
       footer.appendChild(svgEl("line", {
-        x1: textX + textUnits(title) * 34 + 3 * 4 + 24, y1: footerY + 80,
-        x2: card.x + card.width - 45, y2: footerY + 80,
+        x1: textX + textUnits(title) * 34 + 3 * 4 + 24, y1: footerY + 60,
+        x2: card.x + card.width - 45, y2: footerY + 60,
         stroke: "#b9ccd2", "stroke-width": 4, "stroke-linecap": "round", "stroke-dasharray": "2 14"
       }));
       return { textX, maxWidth: card.x + card.width - 45 - textX };
@@ -840,41 +840,38 @@
 
     const hours = footerHeading(cards[0], "clock", "門診時間");
     [state.morningClinic, state.afternoonClinic].forEach((line, index) => {
-      addText(footer, line, hours.textX, footerY + 185 + index * 78, {
+      addText(footer, line, hours.textX, footerY + 158 + index * 68, {
         size: fitTextSize(line, 46, hours.maxWidth, 28), weight: 850, fill: INK
       });
     });
 
     const registration = footerHeading(cards[1], "pin", "現場掛號");
     [`上午 ${state.morningRegistration}`, `下午 ${state.afternoonRegistration}`].forEach((line, index) => {
-      addText(footer, line, registration.textX, footerY + 185 + index * 78, {
+      addText(footer, line, registration.textX, footerY + 158 + index * 68, {
         size: fitTextSize(line, 44, registration.maxWidth, 28), weight: 850, fill: INK
       });
     });
 
     const contact = footerHeading(cards[2], "phone", "聯絡資訊");
-    addText(footer, state.primaryPhone, contact.textX, footerY + 156, {
+    addText(footer, state.primaryPhone, contact.textX, footerY + 146, {
       size: fitTextSize(state.primaryPhone, 52, contact.maxWidth, 30), weight: 900, fill: INK
     });
-    addText(footer, state.otherPhones, contact.textX, footerY + 208, {
+    addText(footer, state.otherPhones, contact.textX, footerY + 192, {
       size: fitTextSize(state.otherPhones, 30, contact.maxWidth, 20), weight: 650, fill: MUTED
     });
-    addText(footer, state.address, contact.textX, footerY + 258, {
+    addText(footer, state.address, contact.textX, footerY + 234, {
       size: fitTextSize(state.address, 32, contact.maxWidth, 20), weight: 720, fill: "#3f5b64"
     });
-    addText(footer, state.website, contact.textX, footerY + 304, {
-      size: fitTextSize(state.website, 29, contact.maxWidth, 20), weight: 650, fill: MUTED, spacing: 1
-    });
 
-    const qrSize = 250;
+    const qrSize = 200;
     [
       { card: cards[3], href: window.QR_ASSETS?.googleMaps, label: "Google 地標" },
       { card: cards[4], href: window.QR_ASSETS?.facebook, label: "Facebook" }
     ].forEach(({ card, href, label }) => {
       if (!href) return;
       const center = card.x + card.width / 2;
-      footer.appendChild(svgEl("image", { href, x: center - qrSize / 2, y: footerY + 22, width: qrSize, height: qrSize }));
-      addText(footer, label, center, footerY + 312, { size: 29, weight: 850, anchor: "middle", fill: TEAL });
+      footer.appendChild(svgEl("image", { href, x: center - qrSize / 2, y: footerY + 14, width: qrSize, height: qrSize }));
+      addText(footer, label, center, footerY + 247, { size: 29, weight: 850, anchor: "middle", fill: TEAL });
     });
     poster.appendChild(footer);
 

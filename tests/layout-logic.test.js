@@ -19,11 +19,11 @@ assert.deepEqual(
   [[2, 2, true], [2, 3, true], [2, 3, true], [2, 4, true], [2, 4, true]]
 );
 
-// 不論異動幾筆，異動卡與門診表之間都留 40，門診表都收在 1848。
+// 不論異動幾筆，異動卡與門診表之間都留 40，門診表都收在 1950（頁尾卡從 1990 起）。
 [1, 2, 3, 4, 5, 6, 7, 8].forEach((count) => {
   const layout = getChangeLayout(count);
   assert.equal(layout.alertY + layout.alertHeight + 40, layout.gridY, `${count} 筆：異動卡與門診表間距不是 40`);
-  assert.equal(layout.gridY + layout.tableHeaderHeight + layout.tableRowHeight * 4, 1848, `${count} 筆：門診表沒收在 1848`);
+  assert.equal(layout.gridY + layout.tableHeaderHeight + layout.tableRowHeight * 4, 1950, `${count} 筆：門診表沒收在 1950`);
 });
 
 assert.equal(getChangeLayout(4).alertHeight, 480);
