@@ -528,7 +528,8 @@
       return;
     }
 
-    if (cell.status === "empty") {
+    // 沒醫師也沒日期就是沒門診，狀態忘了改成「無門診」時不該印「未填」或殘留的代診膠囊。
+    if (cell.status === "empty" || (!cell.doctor && !cell.dates)) {
       addText(group, "—", x + width / 2, y + 140 * scale, {
         size: 56 * scale, weight: 500, anchor: "middle", fill: "#b7c7cc"
       });

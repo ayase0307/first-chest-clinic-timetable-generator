@@ -12,15 +12,15 @@ assert.deepEqual(
 );
 
 assert.deepEqual(
-  [4, 5, 6].map((count) => {
+  [4, 5, 6, 7, 8].map((count) => {
     const layout = getChangeLayout(count);
     return [layout.rows, layout.columns, layout.stacked];
   }),
-  [[2, 2, true], [2, 3, true], [2, 3, true]]
+  [[2, 2, true], [2, 3, true], [2, 3, true], [2, 4, true], [2, 4, true]]
 );
 
 // 不論異動幾筆，異動卡與門診表之間都留 40，門診表都收在 1848。
-[1, 2, 3, 4, 5, 6].forEach((count) => {
+[1, 2, 3, 4, 5, 6, 7, 8].forEach((count) => {
   const layout = getChangeLayout(count);
   assert.equal(layout.alertY + layout.alertHeight + 40, layout.gridY, `${count} 筆：異動卡與門診表間距不是 40`);
   assert.equal(layout.gridY + layout.tableHeaderHeight + layout.tableRowHeight * 4, 1848, `${count} 筆：門診表沒收在 1848`);
