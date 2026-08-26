@@ -30,29 +30,22 @@
   }
 
   // 單一門診格的垂直配置，單位是未縮放的 250px 設計高度。
-  // 由上而下是專科徽章 → 醫師名 → 日期 → 代診膠囊，相鄰兩層都不能疊字。
-  // 徽章擺在名字之前當分類標籤，名字才會緊貼著自己的日期，不被色條切開。
-  function getCellLayout(hasSpecialty, hasAlt) {
-    if (hasSpecialty && hasAlt) {
-      return {
-        specialtyY: 26, specialtyHeight: 36, specialtyTextY: 51, specialtySize: 25,
-        nameY: 110, nameSize: 64,
-        datesY: 150, datesSize: 33,
-        altY: 164, altHeight: 52, altTextY: 198, altSize: 29
-      };
-    }
+  // 由上而下是醫師名 → 日期 → 代診膠囊，相鄰兩層都不能疊字。
+  // 專科徽章跟醫師名排同一行（見 app.js `drawCell`），不佔垂直空間，
+  // 所以版面只看有沒有代診膠囊，醫師名在兩種情況下都吃得到 70 字級。
+  function getCellLayout(hasAlt) {
     if (hasAlt) {
       return {
-        specialtyY: 0, specialtyHeight: 0, specialtyTextY: 0, specialtySize: 31,
+        specialtyHeight: 44, specialtySize: 28,
         nameY: 73, nameSize: 70,
         datesY: 145, datesSize: 38,
         altY: 172, altHeight: 54, altTextY: 210, altSize: 31
       };
     }
     return {
-      specialtyY: 34, specialtyHeight: 46, specialtyTextY: 68, specialtySize: 29,
-      nameY: 138, nameSize: 70,
-      datesY: 186, datesSize: 38,
+      specialtyHeight: 48, specialtySize: 30,
+      nameY: 118, nameSize: 70,
+      datesY: 175, datesSize: 38,
       altY: 0, altHeight: 0, altTextY: 0, altSize: 31
     };
   }

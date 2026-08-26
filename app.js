@@ -391,6 +391,10 @@
   const MUTED = "#7d8f95";
   // 右上角月份卡，底邊要收在異動區（505）之上。
   const CARD = { x: 2716, y: 78, width: 470, height: 388, radius: 26 };
+  // 中文字幾乎沒有下伸部，用 0.72 em 上伸、0.14 em 下伸估算字的視覺高度，
+  // 拿來把同一行的元素對齊到文字中線（tests/layout-logic.test.js 用同一組數字驗疊字）。
+  const ASCENT = .72;
+  const DESCENT = .14;
 
   function addText(parent, text, x, y, options = {}) {
     const node = svgEl("text", {
@@ -538,27 +542,40 @@
 
     const hasSpecialty = Boolean(cell.specialty);
     const hasAlt = Boolean(cell.alt);
-    const layout = window.TimetableLayoutLogic.getCellLayout(hasSpecialty, hasAlt);
+    const layout = window.TimetableLayoutLogic.getCellLayout(hasAlt);
     // 格寬固定、格高會依異動筆數縮放，所以先換算回未縮放空間再套 fitTextSize。
     const fitInCell = (text, preferred, maxWidth, minimum) =>
       fitTextSize(text, preferred, maxWidth / scale, minimum) * scale;
+    const nameText = cell.doctor || "未填";
+    const nameLine = width - 40;
 
-    if (hasSpecialty) {
-      const specialtySize = fitInCell(cell.specialty, layout.specialtySize, width - 120, 20);
+    if (!hasSpecialty) {
+      addText(group, nameText, x + width / 2, y + layout.nameY * scale, {
+        size: fitInCell(nameText, layout.nameSize, nameLine, 34),
+        weight: 850, anchor: "middle", fill: INK, spacing: 2
+      });
+    } else {
+      // 專科徽章跟醫師名排同一行、整組置中，垂直方向省下來的一整層還給名字與日期。
+      const specialtySize = fitInCell(cell.specialty, layout.specialtySize, nameLine / 2, 18);
       const badgeHeight = layout.specialtyHeight * scale;
       // 徽章寬度貼著文字走：左右各留一個圓角的寬度，短科別就不會被撐成一條寬色條。
-      const badgeWidth = Math.min(width - 40, textUnits(cell.specialty) * (specialtySize + 2) + badgeHeight);
-      addRect(group, x + (width - badgeWidth) / 2, y + layout.specialtyY * scale, badgeWidth,
-        badgeHeight, "#1a8391", badgeHeight / 2);
-      addText(group, cell.specialty, x + width / 2, y + layout.specialtyTextY * scale, {
+      // 再長也只吃掉半行，剩下半行一定留給醫師名。
+      const badgeWidth = Math.min(nameLine / 2, textUnits(cell.specialty) * (specialtySize + 2) + badgeHeight);
+      const gap = 14 * scale;
+      const nameSize = fitInCell(nameText, layout.nameSize, nameLine - badgeWidth - gap, 30);
+      const nameWidth = textUnits(nameText) * (nameSize + 2);
+      const left = x + (width - (badgeWidth + gap + nameWidth)) / 2;
+      // 徽章對齊名字的視覺中線（中文幾乎沒下伸部，所以中線偏上）。
+      const nameMiddle = y + layout.nameY * scale - nameSize * (ASCENT - DESCENT) / 2;
+
+      addRect(group, left, nameMiddle - badgeHeight / 2, badgeWidth, badgeHeight, "#1a8391", badgeHeight / 2);
+      addText(group, cell.specialty, left + badgeWidth / 2, nameMiddle + specialtySize * (ASCENT - DESCENT) / 2, {
         size: specialtySize, weight: 800, anchor: "middle", fill: "#ffffff", spacing: 2
       });
+      addText(group, nameText, left + badgeWidth + gap, y + layout.nameY * scale, {
+        size: nameSize, weight: 850, anchor: "start", fill: INK, spacing: 2
+      });
     }
-
-    addText(group, cell.doctor || "未填", x + width / 2, y + layout.nameY * scale, {
-      size: fitInCell(cell.doctor || "未填", layout.nameSize, width - 40, 34),
-      weight: 850, anchor: "middle", fill: INK, spacing: 2
-    });
 
     if (cell.dates) {
       addText(group, cell.dates, x + width / 2, y + layout.datesY * scale, {
