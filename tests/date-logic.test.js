@@ -32,4 +32,24 @@ const leapState = { year: "113", month: "2", rows: [{ session: "上午", room: "
 logic.autoPopulateDates(leapState);
 assert.equal(leapState.rows[0].cells[3].dates, "1・8・15・22・29");
 
+// 沒醫師的格子不該被「原看診醫師沒填」的異動套進代診膠囊，
+// 而且上一版留下來的日期與膠囊要自己清掉、回到「無門診」。
+const blankState = {
+  year: "115",
+  month: "9",
+  rows: [{
+    session: "下午",
+    room: "第2診",
+    cells: cells("甲").map((cell, index) => index === 2
+      ? { doctor: "", specialty: "", dates: "9・30", alt: "23 代診醫師未填代診", status: "substitute" }
+      : cell)
+  }],
+  changes: [{ date: "9/23", session: "下午", room: "第2診", originalDoctor: "", substituteDoctor: "", kind: "substitute" }]
+};
+logic.autoPopulateDates(blankState);
+assert.deepEqual(
+  [blankState.rows[0].cells[2].dates, blankState.rows[0].cells[2].alt, blankState.rows[0].cells[2].status],
+  ["", "", "empty"]
+);
+
 console.log("date-logic tests passed");

@@ -50,7 +50,15 @@
 
     state.rows.forEach((row) => {
       row.cells.forEach((cell, dayIndex) => {
-        if (cell.status === "empty" || cell.status === "closed" || !normalizeDoctor(cell.doctor)) return;
+        if (cell.status === "closed") return;
+        // 沒醫師就是沒門診，順便把上一版異動留下來的日期與代診膠囊清乾淨。
+        if (!normalizeDoctor(cell.doctor)) {
+          cell.dates = "";
+          cell.alt = "";
+          cell.status = "empty";
+          return;
+        }
+        if (cell.status === "empty") return;
         cell.dates = weekdayDates[dayIndex].join("・");
         cell.alt = "";
         if (cell.status === "substitute") cell.status = "normal";
@@ -66,7 +74,9 @@
       if (rowIndex < 0) return;
       const dayIndex = parsed.weekday - 1;
       const cell = state.rows[rowIndex].cells[dayIndex];
-      if (!cell || normalizeDoctor(cell.doctor) !== normalizeDoctor(change.originalDoctor)) return;
+      // 原看診醫師沒填時不能拿空字串去比對，否則會套進沒醫師的空格子。
+      const changeDoctor = normalizeDoctor(change.originalDoctor);
+      if (!cell || !changeDoctor || normalizeDoctor(cell.doctor) !== changeDoctor) return;
 
       cell.dates = cell.dates
         .split("・")
