@@ -47,7 +47,7 @@
           { doctor: "", specialty: "", dates: "", alt: "", status: "empty" },
           { doctor: "", specialty: "", dates: "", alt: "", status: "empty" },
           { doctor: "賈文君", specialty: "家醫科", dates: "7・14・21・28", alt: "", status: "normal" },
-          { doctor: "休診", specialty: "", dates: "", alt: "", status: "closed" }
+          { doctor: "停診", specialty: "", dates: "", alt: "", status: "closed" }
         ]
       },
       {
@@ -58,7 +58,7 @@
           { doctor: "羅嬌芳", specialty: "", dates: "5・12・19・26", alt: "", status: "normal" },
           { doctor: "藍龍雄", specialty: "", dates: "6・13・20・27", alt: "", status: "normal" },
           { doctor: "蘇立芳", specialty: "", dates: "14・28", alt: "7・21 許和宏代診", status: "substitute" },
-          { doctor: "休診", specialty: "", dates: "", alt: "", status: "closed" }
+          { doctor: "停診", specialty: "", dates: "", alt: "", status: "closed" }
         ]
       }
     ],
@@ -70,7 +70,7 @@
     primaryPhone: "(02) 2557-7221",
     otherPhones: "2557-5507・2557-2392",
     website: "www.tb.org.tw",
-    closureNote: "週六下午、週日及例假日休診｜颱風天災依臺北市政府停班公告休診"
+    closureNote: "週六下午、週日及例假日停診｜颱風天災依臺北市政府停班公告停診"
   };
 
   const MAX_CHANGES = window.TimetableLayoutLogic.MAX_CHANGES;
@@ -264,7 +264,7 @@
         field("異動類型", `${base}.kind`, {
           type: "select",
           full: true,
-          choices: [["substitute", "代診"], ["closed", "休診"], ["notice", "其他異動"]]
+          choices: [["substitute", "代診"], ["closed", "停診"], ["notice", "其他異動"]]
         })
       );
       card.append(head, grid);
@@ -289,7 +289,7 @@
     } else {
       const limit = document.createElement("p");
       limit.className = "empty-changes";
-      limit.textContent = `海報版面最多容納 ${MAX_CHANGES} 筆異動，若還有其他異動請寫進「休診說明」。`;
+      limit.textContent = `海報版面最多容納 ${MAX_CHANGES} 筆異動，若還有其他異動請寫進「停診說明」。`;
       alertFields.appendChild(limit);
     }
   }
@@ -347,10 +347,10 @@
         grid.className = "cell-editor-grid";
         const base = `rows.${rowIndex}.cells.${dayIndex}`;
         grid.append(
-          field("醫師／休診", `${base}.doctor`),
+          field("醫師／停診", `${base}.doctor`),
           field("狀態", `${base}.status`, {
             type: "select",
-            choices: [["normal", "正常"], ["substitute", "含代診"], ["empty", "無門診"], ["closed", "休診"]]
+            choices: [["normal", "正常"], ["substitute", "含代診"], ["empty", "無門診"], ["closed", "停診"]]
           }),
           field("專科", `${base}.specialty`, { full: true })
         );
@@ -370,7 +370,7 @@
       field("主要電話", "primaryPhone"),
       field("其他電話", "otherPhones"),
       field("網站", "website", { full: true }),
-      field("休診說明", "closureNote", { type: "textarea", full: true })
+      field("停診說明", "closureNote", { type: "textarea", full: true })
     );
   }
 
@@ -522,7 +522,7 @@
     if (cell.status === "closed") {
       const pillWidth = Math.min(width - 130, 260);
       addRect(group, x + (width - pillWidth) / 2, y + 88 * scale, pillWidth, 76 * scale, "#fce7e4", 38 * scale);
-      addText(group, cell.doctor || "休診", x + width / 2, y + 142 * scale, {
+      addText(group, cell.doctor || "停診", x + width / 2, y + 142 * scale, {
         size: 44 * scale, weight: 850, anchor: "middle", fill: "#c0524a", spacing: 4
       });
       return;
@@ -718,7 +718,7 @@
         if (incomplete) {
           detail = "請填入日期、醫師與異動內容";
         } else if (change.kind === "closed") {
-          detail = `${change.originalDoctor || "原看診醫師"}｜休診`;
+          detail = `${change.originalDoctor || "原看診醫師"}｜停診`;
         } else if (change.kind === "notice") {
           detail = `${change.originalDoctor || "異動"}｜${change.substituteDoctor || "內容未填"}`;
         } else {
@@ -843,7 +843,7 @@
     });
     poster.appendChild(footer);
 
-    // 滿版底條收尾，休診說明改成反白字，海報下緣就不會是浮著的一行小字。
+    // 滿版底條收尾，停診說明改成反白字，海報下緣就不會是浮著的一行小字。
     addRect(poster, 0, 2300, 3300, 100, INK);
     addText(poster, state.closureNote, 170, 2364, {
       size: fitTextSize(state.closureNote, 36, 2960, 24), weight: 700, fill: "#c9dde4", spacing: 1

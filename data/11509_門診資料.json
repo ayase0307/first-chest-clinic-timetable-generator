@@ -18,10 +18,10 @@
       "session": "上午", "room": "第2診", "time": "09:00 起",
       "cells": [
         { "doctor": "許和宏", "specialty": "", "dates": "7・14・21・28", "alt": "", "status": "normal" },
-        { "doctor": "徐上富", "specialty": "胸腔科", "dates": "1・22・29", "alt": "8・15 休診", "status": "substitute" },
+        { "doctor": "徐上富", "specialty": "胸腔科", "dates": "1・22・29", "alt": "8・15 停診", "status": "substitute" },
         { "doctor": "陳志維", "specialty": "心臟科", "dates": "2・9・16・23・30", "alt": "", "status": "normal" },
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" },
-        { "doctor": "徐上富", "specialty": "胸腔科", "dates": "4・18・25", "alt": "11 休診", "status": "substitute" },
+        { "doctor": "徐上富", "specialty": "胸腔科", "dates": "4・18・25", "alt": "11 停診", "status": "substitute" },
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" }
       ]
     },
@@ -44,7 +44,7 @@
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" },
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" },
         { "doctor": "賈文君", "specialty": "家醫科", "dates": "4・11・18・25", "alt": "", "status": "normal" },
-        { "doctor": "休診", "specialty": "", "dates": "", "alt": "", "status": "closed" }
+        { "doctor": "停診", "specialty": "", "dates": "", "alt": "", "status": "closed" }
       ]
     },
     {
@@ -55,7 +55,7 @@
         { "doctor": "羅嬌芳", "specialty": "", "dates": "9・30", "alt": "2 徐上富代診｜16・23 許和宏代診", "status": "substitute" },
         { "doctor": "藍龍雄", "specialty": "", "dates": "3・10・17・24", "alt": "", "status": "normal" },
         { "doctor": "蘇立芳", "specialty": "", "dates": "4・11・25", "alt": "18 許和宏代診", "status": "substitute" },
-        { "doctor": "休診", "specialty": "", "dates": "", "alt": "", "status": "closed" }
+        { "doctor": "停診", "specialty": "", "dates": "", "alt": "", "status": "closed" }
       ]
     }
   ],
@@ -67,5 +67,5 @@
   "primaryPhone": "(02) 2557-7221",
   "otherPhones": "2557-5507・2557-2392",
   "website": "www.tb.org.tw",
-  "closureNote": "週六下午、週日及例假日休診｜颱風天災依臺北市政府停班公告休診"
+  "closureNote": "週六下午、週日及例假日停診｜颱風天災依臺北市政府停班公告停診"
 }

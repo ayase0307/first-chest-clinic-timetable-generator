@@ -88,7 +88,7 @@
       if (!notes.has(key)) notes.set(key, []);
       notes.get(key).push({
         day: parsed.day,
-        label: change.kind === "closed" ? "休診" : `${change.substituteDoctor || "代診醫師未填"}代診`
+        label: change.kind === "closed" ? "停診" : `${change.substituteDoctor || "代診醫師未填"}代診`
       });
     });
 
