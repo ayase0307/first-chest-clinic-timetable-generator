@@ -35,8 +35,8 @@
   function getCellLayout(hasSpecialty, hasAlt) {
     if (hasSpecialty && hasAlt) {
       return {
-        specialtyY: 20, specialtyHeight: 36, specialtyTextY: 45, specialtySize: 25,
-        nameY: 106, nameSize: 64,
+        specialtyY: 26, specialtyHeight: 36, specialtyTextY: 51, specialtySize: 25,
+        nameY: 110, nameSize: 64,
         datesY: 150, datesSize: 33,
         altY: 164, altHeight: 52, altTextY: 198, altSize: 29
       };
