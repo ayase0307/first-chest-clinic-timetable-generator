@@ -70,6 +70,22 @@
       if (change.kind === "notice") return;
       const parsed = parseChangeDate(state, change.date);
       if (!parsed || parsed.weekday < 1 || parsed.weekday > 6) return;
+
+      // 節慶停診是整天全所休息，跟時段／診室／原看診醫師無關：所有診次都把那天抽掉。
+      // 格子裡不再各掛一顆膠囊（那天有四格會全部變擠），由上方的異動卡統一公告。
+      if (change.kind === "holiday") {
+        state.rows.forEach((row) => {
+          const cell = row.cells[parsed.weekday - 1];
+          if (!cell || !cell.dates) return;
+          cell.dates = cell.dates
+            .split("・")
+            .filter(Boolean)
+            .filter((date) => Number(date) !== parsed.day)
+            .join("・");
+        });
+        return;
+      }
+
       const rowIndex = state.rows.findIndex((row) => row.session === change.session && row.room === change.room);
       if (rowIndex < 0) return;
       const dayIndex = parsed.weekday - 1;

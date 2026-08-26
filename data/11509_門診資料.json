@@ -11,7 +11,8 @@
     { "date": "9/15", "session": "上午", "room": "第2診", "originalDoctor": "徐上富", "substituteDoctor": "", "kind": "closed" },
     { "date": "9/16", "session": "下午", "room": "第3診", "originalDoctor": "羅嬌芳", "substituteDoctor": "許和宏", "kind": "substitute" },
     { "date": "9/18", "session": "下午", "room": "第3診", "originalDoctor": "蘇立芳", "substituteDoctor": "許和宏", "kind": "substitute" },
-    { "date": "9/23", "session": "下午", "room": "第3診", "originalDoctor": "羅嬌芳", "substituteDoctor": "許和宏", "kind": "substitute" }
+    { "date": "9/23", "session": "下午", "room": "第3診", "originalDoctor": "羅嬌芳", "substituteDoctor": "許和宏", "kind": "substitute" },
+    { "date": "9/25", "session": "上午", "room": "第2診", "originalDoctor": "", "substituteDoctor": "中秋節", "kind": "holiday" }
   ],
   "rows": [
     {

@@ -52,4 +52,22 @@ assert.deepEqual(
   ["", "", "empty"]
 );
 
+// 節慶停診：不管時段／診室／原看診醫師，那天所有診次都要抽掉，格子裡不留膠囊。
+const holidayState = {
+  year: "115",
+  month: "9",
+  rows: [
+    { session: "上午", room: "第2診", cells: cells("甲") },
+    { session: "下午", room: "第3診", cells: cells("乙") }
+  ],
+  changes: [{ date: "9/25", session: "上午", room: "第2診", originalDoctor: "", substituteDoctor: "中秋節", kind: "holiday" }]
+};
+logic.autoPopulateDates(holidayState);
+// 115/9 的星期五是 4、11、18、25。
+assert.deepEqual(
+  holidayState.rows.map((row) => [row.cells[4].dates, row.cells[4].alt]),
+  [["4・11・18", ""], ["4・11・18", ""]]
+);
+assert.equal(holidayState.rows[0].cells[3].dates, "3・10・17・24", "節慶停診不該動到其他天");
+
 console.log("date-logic tests passed");

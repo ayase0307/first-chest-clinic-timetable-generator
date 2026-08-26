@@ -210,7 +210,11 @@
     }
     control.value = getPath(path) ?? "";
     control.placeholder = options.placeholder || "";
-    control.addEventListener("input", (event) => setPath(path, event.target.value));
+    control.addEventListener("input", (event) => {
+      setPath(path, event.target.value);
+      // 有些欄位會改變同一張卡要顯示哪些欄位（例如異動類型選了節慶停診）。
+      if (options.onChange) options.onChange();
+    });
     wrap.appendChild(control);
     return wrap;
   }
@@ -249,22 +253,29 @@
       const grid = document.createElement("div");
       grid.className = "change-editor-grid";
       const base = `changes.${index}`;
+      // 節慶停診是整天全所休息，時段／診室／原看診醫師都用不到，就不要擺出來讓人填。
+      const isHoliday = change.kind === "holiday";
       grid.append(
         field("日期（如 8/7）", `${base}.date`),
-        field("時段", `${base}.session`, {
-          type: "select",
-          choices: [["上午", "上午"], ["下午", "下午"]]
+        ...(isHoliday ? [] : [
+          field("時段", `${base}.session`, {
+            type: "select",
+            choices: [["上午", "上午"], ["下午", "下午"]]
+          }),
+          field("診室", `${base}.room`, {
+            type: "select",
+            choices: [["第2診", "第2診"], ["第3診", "第3診"]]
+          }),
+          field("原看診醫師", `${base}.originalDoctor`)
+        ]),
+        field(isHoliday ? "節日名稱（如 中秋節）" : "代診醫師／內容", `${base}.substituteDoctor`, {
+          full: isHoliday
         }),
-        field("診室", `${base}.room`, {
-          type: "select",
-          choices: [["第2診", "第2診"], ["第3診", "第3診"]]
-        }),
-        field("原看診醫師", `${base}.originalDoctor`),
-        field("代診醫師／內容", `${base}.substituteDoctor`),
         field("異動類型", `${base}.kind`, {
           type: "select",
           full: true,
-          choices: [["substitute", "代診"], ["closed", "停診"], ["notice", "其他異動"]]
+          onChange: buildAlertEditors,
+          choices: [["substitute", "代診"], ["closed", "停診"], ["holiday", "節慶停診（全所）"], ["notice", "其他異動"]]
         })
       );
       card.append(head, grid);
@@ -719,7 +730,8 @@
         const x = areaX + rowOffset + column * (cardWidth + gapX);
         const y = areaY + row * (cardHeight + gapY);
         const incomplete = !change.date && !change.originalDoctor && !change.substituteDoctor;
-        const accent = incomplete ? "#8ba3ab" : change.kind === "closed" ? "#c0524a" : change.kind === "notice" ? "#d08a2a" : ORANGE;
+        const closesClinic = change.kind === "closed" || change.kind === "holiday";
+        const accent = incomplete ? "#8ba3ab" : closesClinic ? "#c0524a" : change.kind === "notice" ? "#d08a2a" : ORANGE;
         addRect(alert, x, y, cardWidth, cardHeight, incomplete ? "#ffffff" : "#f4f8f9", 16, {
           stroke: incomplete ? "#c0d2d8" : undefined, "stroke-width": incomplete ? 3 : undefined,
           "stroke-dasharray": incomplete ? "14 10" : undefined
@@ -728,7 +740,9 @@
         addText(alert, incomplete ? "待填資料" : formatChangeDate(change.date), x + 121, y + 59, {
           size: 29, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
         });
-        const sessionRoom = `${change.session || "時段"}・${change.room || "診室"}`;
+        const sessionRoom = change.kind === "holiday"
+          ? "全日・全所"
+          : `${change.session || "時段"}・${change.room || "診室"}`;
         addText(alert, incomplete ? "新增異動" : sessionRoom, x + cardWidth - 26, y + 60, {
           size: fitTextSize(sessionRoom, 31, cardWidth - 265, 24), weight: 720, anchor: "end", fill: MUTED
         });
@@ -736,6 +750,8 @@
         let detail;
         if (incomplete) {
           detail = "請填入日期、醫師與異動內容";
+        } else if (change.kind === "holiday") {
+          detail = `${change.substituteDoctor || "節慶假日"}｜全所停診`;
         } else if (change.kind === "closed") {
           detail = `${change.originalDoctor || "原看診醫師"}｜停診`;
         } else if (change.kind === "notice") {
