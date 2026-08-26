@@ -30,28 +30,29 @@
   }
 
   // 單一門診格的垂直配置，單位是未縮放的 250px 設計高度。
-  // 專科徽章必須完全在日期文字之上，日期文字必須完全在代診膠囊之上，否則會疊字。
+  // 由上而下是專科徽章 → 醫師名 → 日期 → 代診膠囊，相鄰兩層都不能疊字。
+  // 徽章擺在名字之前當分類標籤，名字才會緊貼著自己的日期，不被色條切開。
   function getCellLayout(hasSpecialty, hasAlt) {
     if (hasSpecialty && hasAlt) {
       return {
-        nameY: 62, nameSize: 60,
-        specialtyY: 76, specialtyHeight: 42, specialtyTextY: 105, specialtySize: 27,
+        specialtyY: 20, specialtyHeight: 36, specialtyTextY: 45, specialtySize: 25,
+        nameY: 106, nameSize: 64,
         datesY: 150, datesSize: 33,
-        altY: 166, altHeight: 50, altTextY: 200, altSize: 29
+        altY: 164, altHeight: 52, altTextY: 198, altSize: 29
       };
     }
     if (hasAlt) {
       return {
-        nameY: 73, nameSize: 70,
         specialtyY: 0, specialtyHeight: 0, specialtyTextY: 0, specialtySize: 31,
+        nameY: 73, nameSize: 70,
         datesY: 145, datesSize: 38,
         altY: 172, altHeight: 54, altTextY: 210, altSize: 31
       };
     }
     return {
-      nameY: 88, nameSize: 70,
-      specialtyY: 104, specialtyHeight: 52, specialtyTextY: 141, specialtySize: 31,
-      datesY: 190, datesSize: 38,
+      specialtyY: 34, specialtyHeight: 46, specialtyTextY: 68, specialtySize: 29,
+      nameY: 138, nameSize: 70,
+      datesY: 186, datesSize: 38,
       altY: 0, altHeight: 0, altTextY: 0, altSize: 31
     };
   }

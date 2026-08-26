@@ -31,7 +31,8 @@ assert.equal(getChangeLayout(3).alertHeight, 330);
 
 assert.equal(getChangeLayout(99).count, MAX_CHANGES);
 
-// 門診格版面：專科徽章、日期、代診膠囊在四種組合下都不能互相疊字。
+// 門診格版面：專科徽章、醫師名、日期、代診膠囊在四種組合下都不能互相疊字。
+// 徽章在醫師名之上，醫師名在日期之上，日期在代診膠囊之上。
 // 中文字幾乎沒有下伸部，所以用 0.72 em 上伸、0.14 em 下伸估算實際佔用高度。
 const ASCENT = .72;
 const DESCENT = .14;
@@ -43,13 +44,12 @@ const CELL_BOTTOM = 242;
   const datesTop = layout.datesY - layout.datesSize * ASCENT;
 
   if (hasSpecialty) {
-    assert.ok(layout.nameY + layout.nameSize * DESCENT <= layout.specialtyY, `${label}: 醫師名壓到專科徽章`);
-    assert.ok(layout.specialtyY + layout.specialtyHeight <= datesTop, `${label}: 專科徽章壓到日期`);
+    assert.ok(layout.specialtyY >= 0, `${label}: 專科徽章超出格子上緣`);
+    assert.ok(layout.specialtyY + layout.specialtyHeight <= layout.nameY - layout.nameSize * ASCENT, `${label}: 專科徽章壓到醫師名`);
     assert.ok(layout.specialtyTextY - layout.specialtySize * ASCENT >= layout.specialtyY, `${label}: 專科文字超出徽章上緣`);
     assert.ok(layout.specialtyTextY + layout.specialtySize * DESCENT <= layout.specialtyY + layout.specialtyHeight, `${label}: 專科文字超出徽章下緣`);
-  } else {
-    assert.ok(layout.nameY + layout.nameSize * DESCENT <= datesTop, `${label}: 醫師名壓到日期`);
   }
+  assert.ok(layout.nameY + layout.nameSize * DESCENT <= datesTop, `${label}: 醫師名壓到日期`);
 
   if (hasAlt) {
     assert.ok(layout.datesY + layout.datesSize * DESCENT <= layout.altY, `${label}: 日期壓到代診膠囊`);

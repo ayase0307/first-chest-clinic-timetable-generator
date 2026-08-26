@@ -543,20 +543,22 @@
     const fitInCell = (text, preferred, maxWidth, minimum) =>
       fitTextSize(text, preferred, maxWidth / scale, minimum) * scale;
 
-    addText(group, cell.doctor || "未填", x + width / 2, y + layout.nameY * scale, {
-      size: fitInCell(cell.doctor || "未填", layout.nameSize, width - 40, 34),
-      weight: 850, anchor: "middle", fill: INK, spacing: 2
-    });
-
     if (hasSpecialty) {
       const specialtySize = fitInCell(cell.specialty, layout.specialtySize, width - 120, 20);
-      const badgeWidth = Math.min(width - 40, Math.max(128, cell.specialty.length * specialtySize * 1.26 + 44));
+      const badgeHeight = layout.specialtyHeight * scale;
+      // 徽章寬度貼著文字走：左右各留一個圓角的寬度，短科別就不會被撐成一條寬色條。
+      const badgeWidth = Math.min(width - 40, textUnits(cell.specialty) * (specialtySize + 2) + badgeHeight);
       addRect(group, x + (width - badgeWidth) / 2, y + layout.specialtyY * scale, badgeWidth,
-        layout.specialtyHeight * scale, "#1a8391", (layout.specialtyHeight / 2) * scale);
+        badgeHeight, "#1a8391", badgeHeight / 2);
       addText(group, cell.specialty, x + width / 2, y + layout.specialtyTextY * scale, {
         size: specialtySize, weight: 800, anchor: "middle", fill: "#ffffff", spacing: 2
       });
     }
+
+    addText(group, cell.doctor || "未填", x + width / 2, y + layout.nameY * scale, {
+      size: fitInCell(cell.doctor || "未填", layout.nameSize, width - 40, 34),
+      weight: 850, anchor: "middle", fill: INK, spacing: 2
+    });
 
     if (cell.dates) {
       addText(group, cell.dates, x + width / 2, y + layout.datesY * scale, {
