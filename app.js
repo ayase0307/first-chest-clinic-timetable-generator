@@ -544,7 +544,7 @@
     // 沒醫師也沒日期就是沒門診，狀態忘了改成「無門診」時不該印「未填」或殘留的代診膠囊。
     if (cell.status === "empty" || (!cell.doctor && !cell.dates)) {
       addText(group, "—", x + width / 2, y + 140 * scale, {
-        size: 56 * scale, weight: 500, anchor: "middle", fill: "#b7c7cc"
+        size: 56 * scale, weight: 500, anchor: "middle", fill: "#9fb2b9"
       });
       return;
     }
@@ -588,8 +588,10 @@
 
     if (cell.dates) {
       addText(group, cell.dates, x + width / 2, y + layout.datesY * scale, {
+        // 原本的 #7c8f96 對白底只有 3.4:1，貼在牆上看不清楚；#5a7480 拉到 4.9:1
+        // 過 WCAG AA，又還是比醫師名的 INK 淡，主從關係不變。
         size: fitInCell(cell.dates, layout.datesSize, width - 56, 22),
-        weight: 650, anchor: "middle", fill: "#7c8f96", spacing: 1
+        weight: 650, anchor: "middle", fill: "#5a7480", spacing: 1
       });
     }
 
@@ -597,7 +599,7 @@
       addRect(group, x + 28, y + layout.altY * scale, width - 56, layout.altHeight * scale,
         "#fbe1d7", (layout.altHeight / 2) * scale);
       addText(group, cell.alt, x + width / 2, y + layout.altTextY * scale, {
-        size: fitInCell(cell.alt, layout.altSize, width - 90, 18),
+        size: fitInCell(cell.alt, layout.altSize, width - 84, 24),
         weight: 800, anchor: "middle", fill: "#b04a2c"
       });
     }

@@ -116,8 +116,15 @@
         if (!grouped.has(item.label)) grouped.set(item.label, []);
         grouped.get(item.label).push(item.day);
       });
-      cell.alt = Array.from(grouped.entries())
-        .map(([label, dates]) => `${dates.sort((a, b) => a - b).join("・")} ${label}`)
+      const entries = Array.from(grouped.entries())
+        .map(([label, dates]) => [label, dates.sort((a, b) => a - b).join("・")]);
+      // 同一格擠進兩組以上代診時，「代診」會重複到把膠囊字級壓得看不清楚，
+      // 所以只留最後一組的「代診」讓它涵蓋全部。混到停診就不能省，
+      // 否則「2 徐上富｜8・15 停診」會讀不出徐上富到底是代診還是停診。
+      const allSubstitute = entries.every(([label]) => label.endsWith("代診"));
+      cell.alt = entries
+        .map(([label, dates], index) =>
+          `${dates} ${allSubstitute && index < entries.length - 1 ? label.slice(0, -2) : label}`)
         .join("｜");
       cell.status = "substitute";
     });

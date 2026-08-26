@@ -53,7 +53,7 @@
       "cells": [
         { "doctor": "蘇立芳", "specialty": "", "dates": "7・14・21・28", "alt": "", "status": "normal" },
         { "doctor": "許和宏", "specialty": "", "dates": "1・8・15・22・29", "alt": "", "status": "normal" },
-        { "doctor": "羅嬌芳", "specialty": "", "dates": "9・30", "alt": "2 徐上富代診｜16・23 許和宏代診", "status": "substitute" },
+        { "doctor": "羅嬌芳", "specialty": "", "dates": "9・30", "alt": "2 徐上富｜16・23 許和宏代診", "status": "substitute" },
         { "doctor": "藍龍雄", "specialty": "", "dates": "3・10・17・24", "alt": "", "status": "normal" },
         { "doctor": "蘇立芳", "specialty": "", "dates": "4・11・25", "alt": "18 許和宏代診", "status": "substitute" },
         { "doctor": "停診", "specialty": "", "dates": "", "alt": "", "status": "closed" }

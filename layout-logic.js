@@ -34,19 +34,21 @@
   // 專科徽章跟醫師名排同一行（見 app.js `drawCell`），不佔垂直空間，
   // 所以版面只看有沒有代診膠囊，醫師名在兩種情況下都吃得到 70 字級。
   function getCellLayout(hasAlt) {
+    // 看診日期是民眾真正在找的資訊，字級盡量往上推到相鄰兩層的極限；
+    // 超出格寬時 app.js 的 fitTextSize 會自己縮，所以這裡填的是上限不是定值。
     if (hasAlt) {
       return {
         specialtyHeight: 44, specialtySize: 28,
-        nameY: 73, nameSize: 70,
-        datesY: 145, datesSize: 38,
-        altY: 172, altHeight: 54, altTextY: 210, altSize: 31
+        nameY: 70, nameSize: 70,
+        datesY: 142, datesSize: 46,
+        altY: 164, altHeight: 60, altTextY: 208, altSize: 36
       };
     }
     return {
       specialtyHeight: 48, specialtySize: 30,
-      nameY: 118, nameSize: 70,
-      datesY: 175, datesSize: 38,
-      altY: 0, altHeight: 0, altTextY: 0, altSize: 31
+      nameY: 112, nameSize: 70,
+      datesY: 178, datesSize: 48,
+      altY: 0, altHeight: 0, altTextY: 0, altSize: 36
     };
   }
 

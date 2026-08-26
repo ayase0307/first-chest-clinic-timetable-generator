@@ -28,6 +28,31 @@ assert.equal(state.rows[1].cells[4].dates, "14・28");
 assert.equal(state.rows[1].cells[4].alt, "7・21 丁代診");
 assert.equal(logic.formatChangeDate(state, "8/7"), "8/7（五）");
 
+// 兩組都是代診就只留最後一個「代診」，膠囊才不會被壓成小字。
+const twoSubstitutes = {
+  year: "115", month: "9",
+  rows: [{ session: "下午", room: "第3診", cells: cells("羅嬌芳") }],
+  changes: [
+    { date: "9/2", session: "下午", room: "第3診", originalDoctor: "羅嬌芳", substituteDoctor: "徐上富", kind: "substitute" },
+    { date: "9/16", session: "下午", room: "第3診", originalDoctor: "羅嬌芳", substituteDoctor: "許和宏", kind: "substitute" },
+    { date: "9/23", session: "下午", room: "第3診", originalDoctor: "羅嬌芳", substituteDoctor: "許和宏", kind: "substitute" }
+  ]
+};
+logic.autoPopulateDates(twoSubstitutes);
+assert.equal(twoSubstitutes.rows[0].cells[2].alt, "2 徐上富｜16・23 許和宏代診");
+
+// 混到停診就不能省，每一組都要自己講清楚是代診還是停診。
+const mixed = {
+  year: "115", month: "9",
+  rows: [{ session: "上午", room: "第2診", cells: cells("徐上富") }],
+  changes: [
+    { date: "9/8", session: "上午", room: "第2診", originalDoctor: "徐上富", substituteDoctor: "", kind: "closed" },
+    { date: "9/22", session: "上午", room: "第2診", originalDoctor: "徐上富", substituteDoctor: "許和宏", kind: "substitute" }
+  ]
+};
+logic.autoPopulateDates(mixed);
+assert.equal(mixed.rows[0].cells[1].alt, "8 停診｜22 許和宏代診");
+
 const leapState = { year: "113", month: "2", rows: [{ session: "上午", room: "第2診", cells: cells("甲") }], changes: [] };
 logic.autoPopulateDates(leapState);
 assert.equal(leapState.rows[0].cells[3].dates, "1・8・15・22・29");
