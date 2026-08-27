@@ -3,7 +3,7 @@
   "operator": "委託臺北醫學大學附設醫院經營",
   "year": "115",
   "month": "9",
-  "updateDate": "115年8月26日",
+  "updateDate": "115年8月27日",
   "changes": [
     { "date": "9/2", "session": "下午", "room": "第3診", "originalDoctor": "羅嬌芳", "substituteDoctor": "徐上富", "kind": "substitute" },
     { "date": "9/8", "session": "上午", "room": "第2診", "originalDoctor": "徐上富", "substituteDoctor": "", "kind": "closed" },
@@ -12,29 +12,29 @@
     { "date": "9/16", "session": "下午", "room": "第3診", "originalDoctor": "羅嬌芳", "substituteDoctor": "許和宏", "kind": "substitute" },
     { "date": "9/18", "session": "下午", "room": "第3診", "originalDoctor": "蘇立芳", "substituteDoctor": "許和宏", "kind": "substitute" },
     { "date": "9/23", "session": "下午", "room": "第3診", "originalDoctor": "羅嬌芳", "substituteDoctor": "許和宏", "kind": "substitute" },
-    { "date": "9/25", "session": "上午", "room": "第2診", "originalDoctor": "", "substituteDoctor": "中秋節", "kind": "holiday" }
+    { "date": "9/25~9/28", "session": "", "room": "", "originalDoctor": "", "substituteDoctor": "中秋節・教師節連假", "kind": "holiday" }
   ],
   "rows": [
     {
       "session": "上午", "room": "第2診", "time": "09:00 起",
       "cells": [
-        { "doctor": "許和宏", "specialty": "", "dates": "7・14・21・28", "alt": "", "status": "normal" },
+        { "doctor": "許和宏", "specialty": "", "dates": "7・14・21", "alt": "", "status": "normal" },
         { "doctor": "徐上富", "specialty": "胸腔科", "dates": "1・22・29", "alt": "8・15 停診", "status": "substitute" },
         { "doctor": "陳志維", "specialty": "心臟科", "dates": "2・9・16・23・30", "alt": "", "status": "normal" },
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" },
-        { "doctor": "徐上富", "specialty": "胸腔科", "dates": "4・18・25", "alt": "11 停診", "status": "substitute" },
+        { "doctor": "徐上富", "specialty": "胸腔科", "dates": "4・18", "alt": "11 停診", "status": "substitute" },
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" }
       ]
     },
     {
       "session": "上午", "room": "第3診", "time": "09:00 起",
       "cells": [
-        { "doctor": "張忠孝", "specialty": "", "dates": "7・14・21・28", "alt": "", "status": "normal" },
+        { "doctor": "張忠孝", "specialty": "", "dates": "7・14・21", "alt": "", "status": "normal" },
         { "doctor": "張忠孝", "specialty": "", "dates": "1・8・15・22・29", "alt": "", "status": "normal" },
         { "doctor": "簡林楨", "specialty": "", "dates": "2・9・16・23・30", "alt": "", "status": "normal" },
         { "doctor": "張忠孝", "specialty": "", "dates": "3・10・17・24", "alt": "", "status": "normal" },
-        { "doctor": "蘇立芳", "specialty": "", "dates": "4・11・18・25", "alt": "", "status": "normal" },
-        { "doctor": "許和宏", "specialty": "", "dates": "5・12・19・26", "alt": "", "status": "normal" }
+        { "doctor": "蘇立芳", "specialty": "", "dates": "4・11・18", "alt": "", "status": "normal" },
+        { "doctor": "許和宏", "specialty": "", "dates": "5・12・19", "alt": "", "status": "normal" }
       ]
     },
     {
@@ -44,18 +44,18 @@
         { "doctor": "賈文君", "specialty": "家醫科", "dates": "1・8・15・22・29", "alt": "", "status": "normal" },
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" },
         { "doctor": "", "specialty": "", "dates": "", "alt": "", "status": "empty" },
-        { "doctor": "賈文君", "specialty": "家醫科", "dates": "4・11・18・25", "alt": "", "status": "normal" },
+        { "doctor": "賈文君", "specialty": "家醫科", "dates": "4・11・18", "alt": "", "status": "normal" },
         { "doctor": "停診", "specialty": "", "dates": "", "alt": "", "status": "closed" }
       ]
     },
     {
       "session": "下午", "room": "第3診", "time": "13:30 起",
       "cells": [
-        { "doctor": "蘇立芳", "specialty": "", "dates": "7・14・21・28", "alt": "", "status": "normal" },
+        { "doctor": "蘇立芳", "specialty": "", "dates": "7・14・21", "alt": "", "status": "normal" },
         { "doctor": "許和宏", "specialty": "", "dates": "1・8・15・22・29", "alt": "", "status": "normal" },
         { "doctor": "羅嬌芳", "specialty": "", "dates": "9・30", "alt": "2 徐上富｜16・23 許和宏代診", "status": "substitute" },
         { "doctor": "藍龍雄", "specialty": "", "dates": "3・10・17・24", "alt": "", "status": "normal" },
-        { "doctor": "蘇立芳", "specialty": "", "dates": "4・11・25", "alt": "18 許和宏代診", "status": "substitute" },
+        { "doctor": "蘇立芳", "specialty": "", "dates": "4・11", "alt": "18 許和宏代診", "status": "substitute" },
         { "doctor": "停診", "specialty": "", "dates": "", "alt": "", "status": "closed" }
       ]
     }

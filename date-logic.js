@@ -31,10 +31,28 @@
     return { month, day, weekday: date.getDay(), date };
   }
 
+  // 連假（如中秋接教師節）寫成 9/25~9/28 就好，不必一天開一筆異動把公告版面塞爆。
+  // 只認 ~ ～ 至 當區間符號：「-」會把 9-25 這種寫法誤判成 9 號到 25 號。
+  function parseChangeDays(state, value) {
+    const bounds = String(value || "").split(/[~～至]/).map((part) => parseChangeDate(state, part)).filter(Boolean);
+    if (bounds.length < 2) return bounds;
+    const [start, end] = bounds;
+    const days = [];
+    for (let day = start.day; day <= end.day; day += 1) {
+      const parsed = parseChangeDate(state, String(day));
+      if (parsed) days.push(parsed);
+    }
+    return days.length ? days : bounds;
+  }
+
   function formatChangeDate(state, value) {
-    const parsed = parseChangeDate(state, value);
-    if (!parsed) return value || "日期未填";
-    return `${parsed.month}/${parsed.day}（${weekdayMarks[parsed.weekday]}）`;
+    const days = parseChangeDays(state, value);
+    if (!days.length) return value || "日期未填";
+    const first = days[0];
+    const last = days[days.length - 1];
+    // 區間再標星期就撐破日期膠囊了，星期留給單日用。
+    if (last !== first) return `${first.month}/${first.day}～${last.month}/${last.day}`;
+    return `${first.month}/${first.day}（${weekdayMarks[first.weekday]}）`;
   }
 
   function autoPopulateDates(state) {
@@ -68,23 +86,27 @@
     const notes = new Map();
     (state.changes || []).forEach((change) => {
       if (change.kind === "notice") return;
-      const parsed = parseChangeDate(state, change.date);
-      if (!parsed || parsed.weekday < 1 || parsed.weekday > 6) return;
 
       // 節慶停診是整天全所休息，跟時段／診室／原看診醫師無關：所有診次都把那天抽掉。
       // 格子裡不再各掛一顆膠囊（那天有四格會全部變擠），由上方的異動卡統一公告。
       if (change.kind === "holiday") {
-        state.rows.forEach((row) => {
-          const cell = row.cells[parsed.weekday - 1];
-          if (!cell || !cell.dates) return;
-          cell.dates = cell.dates
-            .split("・")
-            .filter(Boolean)
-            .filter((date) => Number(date) !== parsed.day)
-            .join("・");
+        parseChangeDays(state, change.date).forEach((holiday) => {
+          if (holiday.weekday < 1 || holiday.weekday > 6) return;
+          state.rows.forEach((row) => {
+            const cell = row.cells[holiday.weekday - 1];
+            if (!cell || !cell.dates) return;
+            cell.dates = cell.dates
+              .split("・")
+              .filter(Boolean)
+              .filter((date) => Number(date) !== holiday.day)
+              .join("・");
+          });
         });
         return;
       }
+
+      const parsed = parseChangeDate(state, change.date);
+      if (!parsed || parsed.weekday < 1 || parsed.weekday > 6) return;
 
       const rowIndex = state.rows.findIndex((row) => row.session === change.session && row.room === change.room);
       if (rowIndex < 0) return;
@@ -131,5 +153,5 @@
     return true;
   }
 
-  return { autoPopulateDates, formatChangeDate, getCalendar, parseChangeDate };
+  return { autoPopulateDates, formatChangeDate, getCalendar, parseChangeDate, parseChangeDays };
 });

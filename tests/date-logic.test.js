@@ -95,4 +95,19 @@ assert.deepEqual(
 );
 assert.equal(holidayState.rows[0].cells[3].dates, "3・10・17・24", "節慶停診不該動到其他天");
 
+// 連假寫成區間：115/9/25（五）～9/28（一），週六 26 也要停，週日 27 本來就沒門診。
+const longHolidayState = {
+  year: "115",
+  month: "9",
+  rows: [{ session: "上午", room: "第3診", cells: cells("甲") }],
+  changes: [{ date: "9/25~9/28", session: "", room: "", originalDoctor: "", substituteDoctor: "中秋節・教師節連假", kind: "holiday" }]
+};
+logic.autoPopulateDates(longHolidayState);
+assert.deepEqual(
+  longHolidayState.rows[0].cells.map((cell) => cell.dates),
+  ["7・14・21", "1・8・15・22・29", "2・9・16・23・30", "3・10・17・24", "4・11・18", "5・12・19"]
+);
+assert.equal(logic.formatChangeDate(longHolidayState, "9/25~9/28"), "9/25～9/28");
+assert.equal(logic.formatChangeDate(longHolidayState, "9/25"), "9/25（五）", "單日照舊要標星期");
+
 console.log("date-logic tests passed");

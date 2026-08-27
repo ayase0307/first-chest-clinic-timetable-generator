@@ -255,7 +255,7 @@
       // 節慶停診是整天全所休息，時段／診室／原看診醫師都用不到，就不要擺出來讓人填。
       const isHoliday = change.kind === "holiday";
       grid.append(
-        field("日期（如 8/7）", `${base}.date`),
+        field(isHoliday ? "日期（如 9/25 或 9/25~9/28）" : "日期（如 8/7）", `${base}.date`),
         ...(isHoliday ? [] : [
           field("時段", `${base}.session`, {
             type: "select",
@@ -737,8 +737,10 @@
           "stroke-dasharray": incomplete ? "14 10" : undefined
         });
         addRect(alert, x + 26, y + 22, 190, 54, accent, 27);
-        addText(alert, incomplete ? "待填資料" : formatChangeDate(change.date), x + 121, y + 59, {
-          size: 29, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
+        // 連假是 9/25～9/28 這種區間，比單日長一截，膠囊寬度固定就得讓字自己縮。
+        const dateLabel = incomplete ? "待填資料" : formatChangeDate(change.date);
+        addText(alert, dateLabel, x + 121, y + 59, {
+          size: fitTextSize(dateLabel, 29, 166, 22), weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
         });
         const sessionRoom = change.kind === "holiday"
           ? "全日・全所"
