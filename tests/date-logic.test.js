@@ -110,4 +110,24 @@ assert.deepEqual(
 assert.equal(logic.formatChangeDate(longHolidayState, "9/25~9/28"), "9/25～9/28");
 assert.equal(logic.formatChangeDate(longHolidayState, "9/25"), "9/25（五）", "單日照舊要標星期");
 
+// 同一位醫師散在多天的停診寫成一筆清單：9/8、9/15 是週二、9/11 是週五，各自落到自己那一格。
+const listState = {
+  year: "115",
+  month: "9",
+  rows: [{ session: "上午", room: "第2診", cells: cells("徐上富") }],
+  changes: [
+    { date: "9/8・9/11・9/15", session: "上午", room: "第2診", originalDoctor: "徐上富", substituteDoctor: "", kind: "closed" }
+  ]
+};
+logic.autoPopulateDates(listState);
+assert.deepEqual(
+  [listState.rows[0].cells[1].dates, listState.rows[0].cells[1].alt],
+  ["1・22・29", "8・15 停診"]
+);
+assert.deepEqual(
+  [listState.rows[0].cells[4].dates, listState.rows[0].cells[4].alt],
+  ["4・18・25", "11 停診"]
+);
+assert.equal(logic.formatChangeDate(listState, "9/8・9/11・9/15"), "9/8・11・15", "清單只留第一個月份");
+
 console.log("date-logic tests passed");

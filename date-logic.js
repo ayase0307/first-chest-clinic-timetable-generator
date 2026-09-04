@@ -31,9 +31,12 @@
     return { month, day, weekday: date.getDay(), date };
   }
 
-  // 連假（如中秋接教師節）寫成 9/25~9/28 就好，不必一天開一筆異動把公告版面塞爆。
-  // 只認 ~ ～ 至 當區間符號：「-」會把 9-25 這種寫法誤判成 9 號到 25 號。
+  // 連假（如中秋接教師節）寫成 9/25~9/28，同一位醫師散在多天的停診寫成 9/8・9/11・9/15，
+  // 兩種寫法都只佔一筆異動，公告版面才不會被塞爆。
+  // 區間符號只認 ~ ～ 至：「-」會把 9-25 這種寫法誤判成 9 號到 25 號。清單符號認 ・、,，。
   function parseChangeDays(state, value) {
+    const parts = String(value || "").split(/[・、,，]/).filter((part) => part.trim());
+    if (parts.length > 1) return parts.flatMap((part) => parseChangeDays(state, part));
     const bounds = String(value || "").split(/[~～至]/).map((part) => parseChangeDate(state, part)).filter(Boolean);
     if (bounds.length < 2) return bounds;
     const [start, end] = bounds;
@@ -50,9 +53,11 @@
     if (!days.length) return value || "日期未填";
     const first = days[0];
     const last = days[days.length - 1];
-    // 區間再標星期就撐破日期膠囊了，星期留給單日用。
-    if (last !== first) return `${first.month}/${first.day}～${last.month}/${last.day}`;
-    return `${first.month}/${first.day}（${weekdayMarks[first.weekday]}）`;
+    // 區間與清單再標星期就撐破日期膠囊了，星期留給單日用。
+    if (days.length === 1) return `${first.month}/${first.day}（${weekdayMarks[first.weekday]}）`;
+    if (/[~～至]/.test(String(value))) return `${first.month}/${first.day}～${last.month}/${last.day}`;
+    // 清單只在第一個日期標月份，其餘只留日，膠囊才塞得下。
+    return [`${first.month}/${first.day}`].concat(days.slice(1).map((day) => day.day)).join("・");
   }
 
   function autoPopulateDates(state) {
@@ -105,28 +110,31 @@
         return;
       }
 
-      const parsed = parseChangeDate(state, change.date);
-      if (!parsed || parsed.weekday < 1 || parsed.weekday > 6) return;
-
       const rowIndex = state.rows.findIndex((row) => row.session === change.session && row.room === change.room);
       if (rowIndex < 0) return;
-      const dayIndex = parsed.weekday - 1;
-      const cell = state.rows[rowIndex].cells[dayIndex];
       // 原看診醫師沒填時不能拿空字串去比對，否則會套進沒醫師的空格子。
       const changeDoctor = normalizeDoctor(change.originalDoctor);
-      if (!cell || !changeDoctor || normalizeDoctor(cell.doctor) !== changeDoctor) return;
+      if (!changeDoctor) return;
 
-      cell.dates = cell.dates
-        .split("・")
-        .filter(Boolean)
-        .filter((date) => Number(date) !== parsed.day)
-        .join("・");
+      // 一筆異動可以列多天（9/8・9/11・9/15），每天各自算星期，落到自己那一格。
+      parseChangeDays(state, change.date).forEach((parsed) => {
+        if (parsed.weekday < 1 || parsed.weekday > 6) return;
+        const dayIndex = parsed.weekday - 1;
+        const cell = state.rows[rowIndex].cells[dayIndex];
+        if (!cell || normalizeDoctor(cell.doctor) !== changeDoctor) return;
 
-      const key = `${rowIndex}:${dayIndex}`;
-      if (!notes.has(key)) notes.set(key, []);
-      notes.get(key).push({
-        day: parsed.day,
-        label: change.kind === "closed" ? "停診" : `${change.substituteDoctor || "代診醫師未填"}代診`
+        cell.dates = cell.dates
+          .split("・")
+          .filter(Boolean)
+          .filter((date) => Number(date) !== parsed.day)
+          .join("・");
+
+        const key = `${rowIndex}:${dayIndex}`;
+        if (!notes.has(key)) notes.set(key, []);
+        notes.get(key).push({
+          day: parsed.day,
+          label: change.kind === "closed" ? "停診" : `${change.substituteDoctor || "代診醫師未填"}代診`
+        });
       });
     });
 

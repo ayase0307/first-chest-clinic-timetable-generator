@@ -255,7 +255,7 @@
       // 節慶停診是整天全所休息，時段／診室／原看診醫師都用不到，就不要擺出來讓人填。
       const isHoliday = change.kind === "holiday";
       grid.append(
-        field(isHoliday ? "日期（如 9/25 或 9/25~9/28）" : "日期（如 8/7）", `${base}.date`),
+        field(isHoliday ? "日期（如 9/25 或 9/25~9/28）" : "日期（如 8/7，多天寫 9/8・9/11）", `${base}.date`),
         ...(isHoliday ? [] : [
           field("時段", `${base}.session`, {
             type: "select",
@@ -269,6 +269,10 @@
         ]),
         field(isHoliday ? "節日名稱（如 中秋節）" : "代診醫師／內容", `${base}.substituteDoctor`, {
           full: isHoliday
+        }),
+        field("標註 NEW", `${base}.isNew`, {
+          type: "select",
+          choices: [["", "不標註"], ["1", "標註 NEW"]]
         }),
         field("異動類型", `${base}.kind`, {
           type: "select",
@@ -742,11 +746,20 @@
         addText(alert, dateLabel, x + 121, y + 59, {
           size: fitTextSize(dateLabel, 29, 166, 22), weight: 900, anchor: "middle", fill: "#ffffff", spacing: 1
         });
+        // 本次才新增的異動加一枚深藍 NEW 章，民眾看得出哪筆是上次公告後才多出來的。
+        const flagNew = Boolean(change.isNew) && !incomplete;
+        if (flagNew) {
+          addRect(alert, x + 228, y + 22, 92, 54, INK, 12);
+          addText(alert, "NEW", x + 274, y + 59, {
+            size: 27, weight: 900, anchor: "middle", fill: "#ffffff", spacing: 2
+          });
+        }
         const sessionRoom = change.kind === "holiday"
           ? "全日・全所"
           : `${change.session || "時段"}・${change.room || "診室"}`;
         addText(alert, incomplete ? "新增異動" : sessionRoom, x + cardWidth - 26, y + 60, {
-          size: fitTextSize(sessionRoom, 31, cardWidth - 265, 24), weight: 720, anchor: "end", fill: MUTED
+          size: fitTextSize(sessionRoom, 31, cardWidth - 265 - (flagNew ? 104 : 0), 24),
+          weight: 720, anchor: "end", fill: MUTED
         });
 
         let detail;
