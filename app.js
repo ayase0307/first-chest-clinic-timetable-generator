@@ -147,6 +147,39 @@
     return window.TimetableDateLogic.autoPopulateDates(state);
   }
 
+  // 門診表上出現過的醫師，給所有姓名欄位當補全清單（「停診」不是人名）。
+  function doctorNames() {
+    const names = new Set();
+    state.rows.forEach((row) => row.cells.forEach((cell) => {
+      const name = String(cell.doctor || "").trim();
+      if (name && name !== "停診") names.add(name);
+    }));
+    (state.changes || []).forEach((change) => {
+      const name = String(change.substituteDoctor || "").trim();
+      if (name && change.kind === "substitute") names.add(name);
+    });
+    return Array.from(names);
+  }
+
+  function buildDoctorList() {
+    let list = document.getElementById("doctor-names");
+    if (!list) {
+      list = document.createElement("datalist");
+      list.id = "doctor-names";
+      document.body.appendChild(list);
+    }
+    list.replaceChildren(...doctorNames().map((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      return option;
+    }));
+  }
+
+  function todayUpdateDate() {
+    const now = new Date();
+    return `${now.getFullYear() - 1911}年${now.getMonth() + 1}月${now.getDate()}日`;
+  }
+
   function setPath(path, value) {
     const keys = path.split(".");
     let cursor = state;
@@ -209,6 +242,8 @@
     }
     control.value = getPath(path) ?? "";
     control.placeholder = options.placeholder || "";
+    // 醫師姓名到處都要打，打錯一個字異動就對不上；用 datalist 讓人從既有名單挑。
+    if (options.list) control.setAttribute("list", options.list);
     control.addEventListener("input", (event) => {
       setPath(path, event.target.value);
       // 有些欄位會改變同一張卡要顯示哪些欄位（例如異動類型選了節慶停診）。
@@ -220,6 +255,14 @@
 
   function buildAlertEditors() {
     alertFields.replaceChildren();
+    buildDoctorList();
+    const summary = document.getElementById("alert-summary");
+    // 版面只放得下 MAX_CHANGES 筆，筆數寫在標題上，不必等填滿才發現撞到上限。
+    if (summary) {
+      summary.textContent = state.changes.length
+        ? `本月異動（${state.changes.length} / ${MAX_CHANGES} 筆）`
+        : "本月異動";
+    }
 
     if (!state.changes.length) {
       const empty = document.createElement("p");
@@ -254,8 +297,9 @@
       const base = `changes.${index}`;
       // 節慶停診是整天全所休息，時段／診室／原看診醫師都用不到，就不要擺出來讓人填。
       const isHoliday = change.kind === "holiday";
+      const doctorField = isHoliday ? null : field("原看診醫師", `${base}.originalDoctor`, { list: "doctor-names" });
       grid.append(
-        field(isHoliday ? "日期（如 9/25 或 9/25~9/28）" : "日期（如 8/7，多天寫 9/8・9/11）", `${base}.date`),
+        field(isHoliday ? "日期（如 9/25 或 9/25~9/28）" : "日期（如 9/24，多天 9/8,9/11）", `${base}.date`),
         ...(isHoliday ? [] : [
           field("時段", `${base}.session`, {
             type: "select",
@@ -265,10 +309,11 @@
             type: "select",
             choices: [["第2診", "第2診"], ["第3診", "第3診"]]
           }),
-          field("原看診醫師", `${base}.originalDoctor`)
+          doctorField
         ]),
         field(isHoliday ? "節日名稱（如 中秋節）" : "代診醫師／內容", `${base}.substituteDoctor`, {
-          full: isHoliday
+          full: isHoliday,
+          list: isHoliday ? undefined : "doctor-names"
         }),
         field("標註 NEW", `${base}.isNew`, {
           type: "select",
@@ -281,7 +326,36 @@
           choices: [["substitute", "代診"], ["closed", "停診"], ["holiday", "節慶停診（全所）"], ["notice", "其他異動"]]
         })
       );
-      card.append(head, grid);
+
+      // 四項全中才會扣掉門診表上的日期，對不上時是靜默略過的；把結果直接寫在卡片上。
+      const status = document.createElement("p");
+      status.className = "change-status";
+      const refresh = () => {
+        const result = window.TimetableDateLogic.describeChange(state, change);
+        status.textContent = `${result.ok ? "✓" : "⚠"} ${result.text}`;
+        status.classList.toggle("is-warn", !result.ok);
+      };
+      // 日期與診次填完，那一格是誰看診已經確定，姓名欄還空著就自動補上。
+      const autofill = () => {
+        const input = doctorField && doctorField.querySelector("input");
+        if (!input || String(change.originalDoctor || "").trim()) return;
+        const guess = window.TimetableDateLogic.guessOriginalDoctor(state, change);
+        if (!guess) return;
+        change.originalDoctor = guess;
+        input.value = guess;
+        autoPopulateDates();
+        persist();
+        scheduleRender();
+      };
+      // 換異動類型會整區重建，事件冒泡上來時這張卡已經被換掉了，不要再動它。
+      card.addEventListener("input", () => {
+        if (!card.isConnected) return;
+        autofill();
+        refresh();
+      });
+
+      card.append(head, grid, status);
+      refresh();
       alertFields.appendChild(card);
     });
 
@@ -298,6 +372,10 @@
         persist();
         buildAlertEditors();
         flushRender();
+        // 新增完游標直接落在日期欄，不必再用滑鼠點一次。
+        const cards = alertFields.querySelectorAll(".change-editor");
+        const dateInput = cards.length && cards[cards.length - 1].querySelector("input");
+        if (dateInput) dateInput.focus();
       });
       alertFields.appendChild(add);
     } else {
@@ -305,6 +383,24 @@
       limit.className = "empty-changes";
       limit.textContent = `海報版面最多容納 ${MAX_CHANGES} 筆異動，若還有其他異動請寫進「停診說明」。`;
       alertFields.appendChild(limit);
+    }
+
+    // 換月時上個月的異動整批作廢，一筆一筆按「移除」太慢。
+    if (state.changes.length) {
+      const clear = document.createElement("button");
+      clear.type = "button";
+      clear.className = "clear-changes-button";
+      clear.textContent = `清除全部異動（${state.changes.length} 筆）`;
+      clear.addEventListener("click", () => {
+        if (!window.confirm(`要清除全部 ${state.changes.length} 筆異動嗎？門診表日期會依年月重新計算。`)) return;
+        state.changes = [];
+        autoPopulateDates();
+        persist();
+        buildAlertEditors();
+        flushRender();
+        showToast("已清除全部異動");
+      });
+      alertFields.appendChild(clear);
     }
   }
 
@@ -325,6 +421,18 @@
     calendarWarning = document.createElement("p");
     calendarWarning.className = "calendar-warning";
     calendarWarning.textContent = "民國年無效，日期已停止自動更新，海報上的月份與日期不會是正確的。";
+    // 更新日期要手打「115年9月4日」，容易漏改或打錯，給一顆按鈕直接填今天。
+    const today = document.createElement("button");
+    today.type = "button";
+    today.className = "auto-date-button";
+    today.textContent = `📅 更新日期填今天（${todayUpdateDate()}）`;
+    today.addEventListener("click", () => {
+      state.updateDate = todayUpdateDate();
+      persist();
+      buildEditors();
+      flushRender();
+      showToast(`更新日期已改成 ${state.updateDate}`);
+    });
     const recalculate = document.createElement("button");
     recalculate.type = "button";
     recalculate.className = "auto-date-button";
@@ -338,7 +446,7 @@
       flushRender();
       showToast("日期與異動已重新計算");
     });
-    basicFields.append(dateNote, calendarWarning, recalculate);
+    basicFields.append(dateNote, calendarWarning, today, recalculate);
 
     buildAlertEditors();
 
@@ -361,7 +469,7 @@
         grid.className = "cell-editor-grid";
         const base = `rows.${rowIndex}.cells.${dayIndex}`;
         grid.append(
-          field("醫師／停診", `${base}.doctor`),
+          field("醫師／停診", `${base}.doctor`, { list: "doctor-names" }),
           field("狀態", `${base}.status`, {
             type: "select",
             choices: [["normal", "正常"], ["substitute", "含代診"], ["empty", "無門診"], ["closed", "停診"]]

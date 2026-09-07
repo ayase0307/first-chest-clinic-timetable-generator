@@ -130,4 +130,31 @@ assert.deepEqual(
 );
 assert.equal(logic.formatChangeDate(listState, "9/8・9/11・9/15"), "9/8・11・15", "清單只留第一個月份");
 
+// 對帳：四項全中才會扣日期，對不上時要講得出是哪一天、那天實際上是誰。
+const matchState = {
+  year: "115",
+  month: "9",
+  rows: [{
+    session: "下午",
+    room: "第3診",
+    cells: cells("蘇立芳").map((cell, index) => index === 3 ? { ...cell, doctor: "藍龍雄" } : cell)
+  }],
+  changes: []
+};
+const good = { date: "9/24", session: "下午", room: "第3診", originalDoctor: "藍龍雄", substituteDoctor: "蘇立芳", kind: "substitute" };
+assert.deepEqual(logic.describeChange(matchState, good), { ok: true, text: "已從 下午第3診 扣掉 9/24" });
+assert.equal(logic.describeChange(matchState, { ...good, originalDoctor: "羅嬌芳" }).ok, false);
+assert.match(logic.describeChange(matchState, { ...good, originalDoctor: "羅嬌芳" }).text, /藍龍雄/);
+assert.match(logic.describeChange(matchState, { ...good, date: "" }).text, /日期看不懂/);
+assert.match(logic.describeChange(matchState, { ...good, room: "第2診" }).text, /找不到/);
+assert.match(logic.describeChange(matchState, { ...good, originalDoctor: "" }).text, /原看診醫師沒填/);
+// 9/28 是週一（蘇立芳），跟 9/24 混在同一筆就要點名是哪一天對不上。
+assert.match(logic.describeChange(matchState, { ...good, date: "9/24,9/28" }).text, /9\/28/);
+assert.equal(logic.describeChange(matchState, { ...good, kind: "notice" }).ok, true);
+
+// 填完日期與診次就知道那格是誰，不必再要人自己抄名字。
+assert.equal(logic.guessOriginalDoctor(matchState, { date: "9/24", session: "下午", room: "第3診", kind: "substitute" }), "藍龍雄");
+assert.equal(logic.guessOriginalDoctor(matchState, { date: "9/28", session: "下午", room: "第3診", kind: "substitute" }), "蘇立芳");
+assert.equal(logic.guessOriginalDoctor(matchState, { date: "", session: "下午", room: "第3診", kind: "substitute" }), "");
+
 console.log("date-logic tests passed");

@@ -60,6 +60,57 @@
     return [`${first.month}/${first.day}`].concat(days.slice(1).map((day) => day.day)).join("・");
   }
 
+  // 填完日期、時段、診室之後，那一格是誰看診其實已經確定了，不必再叫人自己去門診表抄。
+  function guessOriginalDoctor(state, change) {
+    if (!change || change.kind === "holiday" || change.kind === "notice") return "";
+    const row = state.rows.find((item) => item.session === change.session && item.room === change.room);
+    if (!row) return "";
+    const day = parseChangeDays(state, change.date).find((item) => item.weekday >= 1 && item.weekday <= 6);
+    if (!day) return "";
+    const cell = row.cells[day.weekday - 1];
+    if (!cell || cell.status === "closed" || cell.status === "empty") return "";
+    return normalizeDoctor(cell.doctor) ? String(cell.doctor) : "";
+  }
+
+  // 異動要日期、時段、診室、原看診醫師四項全中，autoPopulateDates() 才會把那天從門診表扣掉；
+  // 少一項就靜默略過，海報照樣輸出。編輯區靠這支把「哪一項對不上」講出來。
+  function describeChange(state, change) {
+    if (!change) return { ok: false, text: "" };
+    const days = parseChangeDays(state, change.date);
+
+    if (change.kind === "holiday") {
+      if (!days.length) return { ok: false, text: "日期看不懂，請寫成 9/25 或 9/25~9/28" };
+      const open = days.filter((day) => day.weekday >= 1 && day.weekday <= 6);
+      if (!open.length) return { ok: false, text: "這幾天本來就沒有門診，海報只會出現公告" };
+      return { ok: true, text: `全所停診，已扣掉 ${open.map((day) => `${day.month}/${day.day}`).join("・")}` };
+    }
+    if (change.kind === "notice") return { ok: true, text: "純公告，不會動到下方門診表" };
+
+    if (!days.length) return { ok: false, text: "日期看不懂，例如 9/24；多天寫 9/8,9/11" };
+    const row = state.rows.find((item) => item.session === change.session && item.room === change.room);
+    if (!row) return { ok: false, text: "找不到這個時段與診室" };
+    const wanted = normalizeDoctor(change.originalDoctor);
+    if (!wanted) return { ok: false, text: "原看診醫師沒填，日期不會自動扣除" };
+
+    const hit = [];
+    const miss = [];
+    days.forEach((day) => {
+      const label = `${day.month}/${day.day}`;
+      if (day.weekday < 1 || day.weekday > 6) {
+        miss.push(`${label} 當天沒有門診`);
+        return;
+      }
+      const cell = row.cells[day.weekday - 1];
+      const actual = normalizeDoctor(cell && cell.doctor);
+      if (actual === wanted) hit.push(label);
+      else miss.push(`${label} 是「${cell && cell.doctor ? cell.doctor : "無門診"}」`);
+    });
+    if (miss.length) {
+      return { ok: false, text: `${change.session}${change.room}：${miss.join("；")}，日期不會自動扣除` };
+    }
+    return { ok: true, text: `已從 ${change.session}${change.room} 扣掉 ${hit.join("・")}` };
+  }
+
   function autoPopulateDates(state) {
     const calendar = getCalendar(state);
     if (!calendar) return false;
@@ -161,5 +212,5 @@
     return true;
   }
 
-  return { autoPopulateDates, formatChangeDate, getCalendar, parseChangeDate, parseChangeDays };
+  return { autoPopulateDates, describeChange, formatChangeDate, getCalendar, guessOriginalDoctor, parseChangeDate, parseChangeDays };
 });
