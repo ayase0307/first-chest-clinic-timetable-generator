@@ -3,7 +3,7 @@
   "operator": "委託臺北醫學大學附設醫院經營",
   "year": "115",
   "month": "11",
-  "updateDate": "115年10月21日",
+  "updateDate": "115年10月27日",
   "changes": [
     {
       "date": "11/4",
@@ -28,6 +28,14 @@
       "originalDoctor": "蘇立芳",
       "substituteDoctor": "許和宏",
       "kind": "substitute"
+    },
+    {
+      "date": "11/28",
+      "session": "",
+      "room": "",
+      "originalDoctor": "",
+      "substituteDoctor": "地方公職人員選舉日",
+      "kind": "holiday"
     }
   ],
   "rows": [
